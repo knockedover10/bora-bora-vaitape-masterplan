@@ -2,39 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ====== Vaitape Patient-Capital palette (HSL fragments) ====== */
+/* ====== Vaitape v7.1 — Neutral Slate-Blue palette (HSL fragments) ====== */
 @layer base {
   :root {
-    /* Light: warm cream / institutional */
-    --background: 47 26% 96%;        /* #F7F6F2 */
-    --surface: 47 26% 96%;
-    --surface-raised: 60 23% 98%;    /* #FBFBF9 */
-    --border: 44 13% 80%;            /* #D4D1CA */
-    --foreground: 44 17% 14%;        /* #28251D */
-    --muted: 44 13% 80%;
-    --muted-foreground: 40 4% 47%;   /* #7A7974 */
-    --accent: 184 98% 22%;           /* #01696F */
-    --accent-foreground: 60 23% 98%;
-    --success: 96 56% 30%;           /* #437A22 */
-    --warning: 18 71% 34%;           /* #964219 */
-    --danger: 320 57% 40%;           /* #A12C7B */
-    --ring: 184 98% 22%;
+    /* Light mode */
+    --background: 42 22% 97%;          /* warm off-white */
+    --surface: 0 0% 100%;
+    --surface-raised: 40 18% 98%;
+    --foreground: 220 25% 14%;         /* deep slate */
+    --muted: 220 14% 88%;
+    --muted-foreground: 220 10% 45%;
+    --border: 220 14% 88%;
+    --accent: 217 33% 35%;             /* deep slate-blue */
+    --accent-soft: 217 33% 92%;        /* pale slate-blue fill */
+    --accent-foreground: 0 0% 100%;
+    --positive: 145 28% 36%;           /* PASS muted forest */
+    --success: 145 28% 36%;            /* alias for legacy */
+    --negative: 4 50% 45%;             /* FAIL muted brick */
+    --danger: 4 50% 45%;               /* alias */
+    --warning: 35 70% 48%;             /* warm amber */
+    --ring: 217 33% 35%;
   }
 
   .dark {
-    --background: 36 8% 9%;          /* #171614 */
-    --surface: 36 8% 9%;
-    --surface-raised: 36 9% 10%;     /* #1C1B19 */
-    --border: 30 3% 22%;             /* #393836 */
-    --foreground: 36 3% 80%;         /* #CDCCCA */
-    --muted: 30 3% 22%;
-    --muted-foreground: 36 1% 47%;   /* #797876 */
-    --accent: 188 35% 47%;           /* #4F98A3 */
-    --accent-foreground: 36 8% 9%;
-    --success: 95 41% 47%;           /* #6DAA45 */
-    --warning: 21 51% 48%;           /* #BB653B */
-    --danger: 322 56% 60%;           /* #D163A7 */
-    --ring: 188 35% 47%;
+    --background: 220 18% 10%;
+    --surface: 220 18% 13%;
+    --surface-raised: 220 16% 16%;
+    --foreground: 40 15% 92%;
+    --muted: 220 14% 22%;
+    --muted-foreground: 220 8% 65%;
+    --border: 220 14% 22%;
+    --accent: 217 40% 65%;             /* lighter slate-blue */
+    --accent-soft: 217 33% 22%;
+    --accent-foreground: 220 18% 10%;
+    --positive: 145 35% 55%;
+    --success: 145 35% 55%;
+    --negative: 4 60% 60%;
+    --danger: 4 60% 60%;
+    --warning: 35 80% 60%;
+    --ring: 217 40% 65%;
   }
 
   * { border-color: hsl(var(--border)); }

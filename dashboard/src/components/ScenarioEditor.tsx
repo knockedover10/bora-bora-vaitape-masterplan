@@ -4,6 +4,7 @@ import { Switch } from "@/components/ui/Switch";
 import { fmtCurrency, fmtPercent } from "@/lib/utils";
 import { computeScenario } from "@/lib/calc";
 import type { CustomEdit } from "@/hooks/useScenarios";
+import type { ModelInputs } from "@/hooks/useModelInputs";
 
 interface Props {
   open: boolean;
@@ -11,26 +12,33 @@ interface Props {
   customs: Record<"customA" | "customB" | "customC", CustomEdit>;
   updateCustom: (k: "customA" | "customB" | "customC", patch: Partial<CustomEdit>) => void;
   toggleActive: (k: "customA" | "customB" | "customC") => void;
+  inputs: ModelInputs;
 }
 
-const labels = { customA: "Custom A", customB: "Custom B", customC: "Custom C" };
+const labels = { customA: "Scenario A", customB: "Scenario B", customC: "Scenario C" };
 
-export function ScenarioEditor({ open, onOpenChange, customs, updateCustom, toggleActive }: Props) {
+export function ScenarioEditor({
+  open,
+  onOpenChange,
+  customs,
+  updateCustom,
+  toggleActive,
+  inputs,
+}: Props) {
   return (
     <Sheet
       open={open}
       onOpenChange={onOpenChange}
-      title="Edit custom scenarios"
-      description="Override ADR shift, Occupancy and TRevPAR uplift for each Custom slot. Toggle a slot on to include it in the dashboard."
+      title="Edit Scenarios"
+      description="Override Average Daily Rate (ADR) Shift, Occupancy and Total Revenue Per Available Room (TRevPAR) Uplift for each Scenario slot. Toggle a slot on to include it in the dashboard."
     >
       <div className="flex flex-col gap-6">
         {(["customA", "customB", "customC"] as const).map((k) => {
           const c = customs[k];
-          const computed = computeScenario({
-            adrShift: c.adrShift,
-            occupancy: c.occ,
-            trevparUplift: c.trevpar,
-          });
+          const computed = computeScenario(
+            { adrShift: c.adrShift, occupancy: c.occ, trevparUplift: c.trevpar },
+            inputs
+          );
           return (
             <div key={k} className="card-base p-5">
               <div className="mb-4 flex items-center justify-between">
@@ -46,23 +54,17 @@ export function ScenarioEditor({ open, onOpenChange, customs, updateCustom, togg
               </div>
 
               <div className="flex flex-col gap-4">
-                <Field
-                  label="ADR shift"
-                  value={fmtPercent(c.adrShift, 0)}
-                >
+                <Field label="Average Daily Rate (ADR) Shift" value={fmtPercent(c.adrShift, 0)}>
                   <Slider
                     min={-0.25}
                     max={0.25}
                     step={0.01}
                     value={c.adrShift}
                     onChange={(v) => updateCustom(k, { adrShift: v })}
-                    ariaLabel="ADR shift"
+                    ariaLabel="Average Daily Rate Shift"
                   />
                 </Field>
-                <Field
-                  label="Occupancy"
-                  value={fmtPercent(c.occ, 0)}
-                >
+                <Field label="Occupancy" value={fmtPercent(c.occ, 0)}>
                   <Slider
                     min={0.3}
                     max={0.85}
@@ -73,7 +75,7 @@ export function ScenarioEditor({ open, onOpenChange, customs, updateCustom, togg
                   />
                 </Field>
                 <Field
-                  label="TRevPAR uplift"
+                  label="Total Revenue Per Available Room (TRevPAR) Uplift"
                   value={fmtPercent(c.trevpar, 0)}
                 >
                   <Slider
@@ -82,18 +84,27 @@ export function ScenarioEditor({ open, onOpenChange, customs, updateCustom, togg
                     step={0.01}
                     value={c.trevpar}
                     onChange={(v) => updateCustom(k, { trevpar: v })}
-                    ariaLabel="TRevPAR uplift"
+                    ariaLabel="TRevPAR Uplift"
                   />
                 </Field>
               </div>
 
               <dl className="mt-5 grid grid-cols-2 gap-3 text-[12.5px]">
-                <Stat label="ADR" value={fmtCurrency(computed.adr)} />
-                <Stat label="RevPAR" value={fmtCurrency(computed.revpar)} />
-                <Stat label="Total Revenue" value={fmtCurrency(computed.totalRevenue, { compact: true })} />
-                <Stat label="NOI" value={fmtCurrency(computed.noi, { compact: true })} />
-                <Stat label="Asset Value" value={fmtCurrency(computed.assetValue, { compact: true })} />
-                <Stat label="Dev Yield" value={fmtPercent(computed.devYield, 2)} />
+                <Stat label="Average Daily Rate" value={fmtCurrency(computed.adr)} />
+                <Stat label="Revenue Per Available Room" value={fmtCurrency(computed.revpar)} />
+                <Stat
+                  label="Total Revenue"
+                  value={fmtCurrency(computed.totalRevenue, { compact: true })}
+                />
+                <Stat
+                  label="Net Operating Income"
+                  value={fmtCurrency(computed.noi, { compact: true })}
+                />
+                <Stat
+                  label="Asset Value"
+                  value={fmtCurrency(computed.assetValue, { compact: true })}
+                />
+                <Stat label="Development Yield" value={fmtPercent(computed.devYield, 2)} />
               </dl>
             </div>
           );

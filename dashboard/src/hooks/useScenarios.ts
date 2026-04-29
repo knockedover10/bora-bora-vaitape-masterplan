@@ -1,11 +1,7 @@
 import { useMemo, useState } from "react";
-import {
-  fixedScenarios,
-  customSeeds,
-  type ScenarioKey,
-  type ScenarioRow,
-} from "@/data/model";
+import type { ScenarioKey, ScenarioRow } from "@/data/model";
 import { computeScenario, computeCashflows, irr, npv } from "@/lib/calc";
+import type { ModelInputs } from "@/hooks/useModelInputs";
 
 export interface CustomEdit {
   adrShift: number;
@@ -22,32 +18,55 @@ export interface ScenarioBundle extends ScenarioRow {
   cashflows: number[] | null;
 }
 
-const baseIrr = 0.132132781593379;
-const stressIrr = 0.0796021588847064;
-const baseNpv = { 7: 27_509_295.8689708, 9: 16_438_556.9944855, 11: 7_652_968.73807797 };
-const stressNpv = { 7: 3_555_433.73914214, 9: -3_414_873.69596192, 11: -8_903_665.18398358 };
+const customSeedsDefault = {
+  customA: { adrShift: 0,    occ: 0.6, trevpar: 0.35 },
+  customB: { adrShift: -0.05, occ: 0.6, trevpar: 0.30 },
+  customC: { adrShift: 0.05,  occ: 0.7, trevpar: 0.40 },
+};
 
-// Pre-computed for upside via spec convention: same DCF logic, NOI = upside.noi
-const upsideRow = fixedScenarios[1]!;
-const upsideCashflows = computeCashflows(upsideRow.noi!);
-const upsideIrr = irr(upsideCashflows);
+/**
+ * Build a scenario bundle from raw scenario shifts + global ModelInputs.
+ * Used for both the fixed Base/Upside/Stress trio (now computed live) and the
+ * three user-editable Scenario A/B/C slots.
+ */
+function buildBundle(
+  key: ScenarioKey,
+  label: string,
+  defaultActive: boolean,
+  fixed: boolean,
+  shifts: { adrShift: number; occupancy: number; trevparUplift: number },
+  m: ModelInputs
+): ScenarioBundle {
+  const c = computeScenario(
+    { adrShift: shifts.adrShift, occupancy: shifts.occupancy, trevparUplift: shifts.trevparUplift },
+    m
+  );
+  const cf = computeCashflows(c.noi, m);
+  return {
+    key, label, fixed, defaultActive,
+    adr: c.adr,
+    occ: c.occupancy,
+    trevpar_uplift: shifts.trevparUplift,
+    revpar: c.revpar,
+    total_revenue: c.totalRevenue,
+    gop: c.gop,
+    gop_margin: c.gopMargin,
+    ebitda: c.ebitda,
+    noi: c.noi,
+    asset_value: c.assetValue,
+    dev_yield: c.devYield,
+    yield_spread: c.yieldSpread,
+    gate1: c.assetValue > m.totalDevCost ? "PASS" : "FAIL",
+    gate3: c.yieldSpread >= 0.01 ? "PASS" : "FAIL",
+    irr12yr: irr(cf),
+    npv7: npv(0.07, cf),
+    npv9: npv(0.09, cf),
+    npv11: npv(0.11, cf),
+    cashflows: cf,
+  };
+}
 
-const baseCashflowsExact = [
-  -12_600_000, -16_800_000, -15_330_000,
-  2_381_241.47625, 3_428_987.7258, 4_286_234.65725,
-  4_762_482.9525, 5_052_518.16430725, 5_204_093.70923647,
-  5_360_216.52051356, 5_521_023.01612897, 5_686_653.70661284,
-  98_672_190.5077429,
-];
-const stressCashflowsExact = [
-  -12_600_000, -16_800_000, -15_330_000,
-  1_556_965.580625, 2_242_030.4361, 2_802_538.045125,
-  3_113_931.16125, 3_303_569.56897012, 3_402_676.65603923,
-  3_504_756.95572041, 3_609_899.66439202, 3_718_196.65432378,
-  64_516_432.2550627,
-];
-
-export function useScenarios() {
+export function useScenarios(m: ModelInputs) {
   const [activeKey, setActiveKey] = useState<ScenarioKey>("base");
 
   const [fixedActive, setFixedActive] = useState<Record<"base" | "upside" | "stress", boolean>>({
@@ -57,82 +76,68 @@ export function useScenarios() {
   });
 
   const [customs, setCustoms] = useState<Record<"customA" | "customB" | "customC", CustomEdit>>({
-    customA: { ...customSeeds.customA, active: false },
-    customB: { ...customSeeds.customB, active: false },
-    customC: { ...customSeeds.customC, active: false },
+    customA: { ...customSeedsDefault.customA, active: false },
+    customB: { ...customSeedsDefault.customB, active: false },
+    customC: { ...customSeedsDefault.customC, active: false },
   });
 
   const scenarios = useMemo<ScenarioBundle[]>(() => {
     const out: ScenarioBundle[] = [];
 
-    // Base
-    out.push({
-      ...fixedScenarios[0]!,
-      irr12yr: baseIrr,
-      npv7: baseNpv[7],
-      npv9: baseNpv[9],
-      npv11: baseNpv[11],
-      cashflows: baseCashflowsExact,
-    });
+    // Base — uses current ModelInputs occupancy + trevpar uplift, ADR shift = 0
+    out.push(
+      buildBundle(
+        "base",
+        "Base Case",
+        true,
+        true,
+        { adrShift: 0, occupancy: m.occBase, trevparUplift: m.trevparUplift },
+        m
+      )
+    );
 
-    // Upside (no exact DCF in anchors — derive)
-    out.push({
-      ...upsideRow,
-      irr12yr: upsideIrr,
-      npv7: npv(0.07, upsideCashflows),
-      npv9: npv(0.09, upsideCashflows),
-      npv11: npv(0.11, upsideCashflows),
-      cashflows: upsideCashflows,
-    });
+    // Upside — base + 7pp occ, +15% ADR, same TRevPAR (capped at 0.85)
+    const upsideOcc = Math.min(m.occBase + 0.07, 0.85);
+    out.push(
+      buildBundle(
+        "upside",
+        "Upside",
+        true,
+        true,
+        { adrShift: 0.15, occupancy: upsideOcc, trevparUplift: m.trevparUplift },
+        m
+      )
+    );
 
-    // Stress
-    out.push({
-      ...fixedScenarios[2]!,
-      irr12yr: stressIrr,
-      npv7: stressNpv[7],
-      npv9: stressNpv[9],
-      npv11: stressNpv[11],
-      cashflows: stressCashflowsExact,
-    });
+    // Combined Stress — ADR -15%, occupancy floored at 50%, same TRevPAR
+    out.push(
+      buildBundle(
+        "stress",
+        "Combined Stress",
+        true,
+        true,
+        { adrShift: -0.15, occupancy: 0.5, trevparUplift: m.trevparUplift },
+        m
+      )
+    );
 
-    // Customs
+    // User-editable Scenario A/B/C
     (["customA", "customB", "customC"] as const).forEach((k, i) => {
       const c = customs[k];
-      const computed = computeScenario({
-        adrShift: c.adrShift,
-        occupancy: c.occ,
-        trevparUplift: c.trevpar,
-      });
-      const cf = computeCashflows(computed.noi);
-      out.push({
-        key: k,
-        label: ["Custom A", "Custom B", "Custom C"][i] as string,
-        fixed: false,
-        defaultActive: false,
-        adr: computed.adr,
-        occ: computed.occupancy,
-        trevpar_uplift: c.trevpar,
-        revpar: computed.revpar,
-        total_revenue: computed.totalRevenue,
-        gop: computed.gop,
-        gop_margin: computed.gopMargin,
-        ebitda: computed.ebitda,
-        noi: computed.noi,
-        asset_value: computed.assetValue,
-        dev_yield: computed.devYield,
-        yield_spread: computed.yieldSpread,
-        gate1: computed.assetValue > 42_000_000 ? "PASS" : "FAIL",
-        gate3: computed.yieldSpread >= 0.01 ? "PASS" : "FAIL",
-        irr12yr: irr(cf),
-        npv7: npv(0.07, cf),
-        npv9: npv(0.09, cf),
-        npv11: npv(0.11, cf),
-        cashflows: cf,
-      });
+      out.push(
+        buildBundle(
+          k,
+          ["Scenario A", "Scenario B", "Scenario C"][i] as string,
+          false,
+          false,
+          { adrShift: c.adrShift, occupancy: c.occ, trevparUplift: c.trevpar },
+          m
+        )
+      );
     });
 
     return out;
-  }, [customs]);
+  }, [customs, m]);
 
   const activeScenarios = useMemo(() => {
     return scenarios.filter((s) => {

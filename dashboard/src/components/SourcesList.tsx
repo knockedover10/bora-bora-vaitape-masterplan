@@ -11,7 +11,7 @@ export function SourcesList() {
     <div className="card-base p-6">
       <div className="mb-4 flex items-baseline justify-between">
         <h3 className="text-[16px] font-semibold tracking-tight">Sources</h3>
-        <span className="label-caps">{sources.length} references</span>
+        <span className="label-caps">{sources.length} References</span>
       </div>
       <div className="grid gap-6 md:grid-cols-2">
         {Object.entries(grouped).map(([cat, items]) => (

@@ -7,10 +7,10 @@ export function TabSensitivities() {
       <div className="card-base p-5">
         <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="text-[16px] font-semibold tracking-tight">
-            Tornado — top 7 NPV @ 7% drivers
+            Tornado — Top 7 Net Present Value (NPV) @ 7% Drivers
           </h3>
           <span className="text-[12px] text-[hsl(var(--muted-foreground))]">
-            Centred on Base NPV @ 7% = $27.51M
+            Centred On Base NPV @ 7% = $27.51M
           </span>
         </div>
         <TornadoChart />

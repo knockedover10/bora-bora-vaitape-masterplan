@@ -3,6 +3,8 @@ import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, ReferenceLine, Cell, Tooltip,
 } from "recharts";
 import { fmtCurrency } from "@/lib/utils";
+import { useChartColors } from "@/hooks/useChartColors";
+import { SafeBarRect } from "@/components/SafeBarRect";
 
 /**
  * Top-7 NPV @ 7% drivers — tornado chart.
@@ -21,25 +23,22 @@ interface Driver {
 }
 
 const drivers: Driver[] = [
-  { label: "ADR (±15%)",                    low: -10_400_000, high: 10_400_000, range: "$1,828 ↔ $2,472" },
-  { label: "Occupancy",                     low: -9_900_000,  high: 6_400_000,  range: "50% ↔ 75%" },
-  { label: "Operating Cost Ratio",          low: -7_300_000,  high: 8_100_000,  range: "78% ↔ 67%" },
-  { label: "Cap Rate (exit)",               low: -8_900_000,  high: 6_100_000,  range: "7.5% ↔ 5.5%" },
-  { label: "TRevPAR uplift",                low: -4_100_000,  high: 5_200_000,  range: "25% ↔ 50%" },
-  { label: "Construction cost / key",       low: -8_400_000,  high: 8_400_000,  range: "$1.4M ↔ $1.0M" },
-  { label: "NOI growth p.a.",               low: -3_700_000,  high: 4_100_000,  range: "2% ↔ 4%" },
+  { label: "Average Daily Rate (±15%)",       low: -10_400_000, high: 10_400_000, range: "$1,828 ↔ $2,472" },
+  { label: "Occupancy",                       low: -9_900_000,  high: 6_400_000,  range: "50% ↔ 75%" },
+  { label: "Operating Cost Ratio",            low: -7_300_000,  high: 8_100_000,  range: "78% ↔ 67%" },
+  { label: "Capitalisation Rate (Exit)",      low: -8_900_000,  high: 6_100_000,  range: "7.5% ↔ 5.5%" },
+  { label: "TRevPAR Uplift",                  low: -4_100_000,  high: 5_200_000,  range: "25% ↔ 50%" },
+  { label: "Construction Cost / Key",         low: -8_400_000,  high: 8_400_000,  range: "$1.4M ↔ $1.0M" },
+  { label: "NOI Growth p.a.",                 low: -3_700_000,  high: 4_100_000,  range: "2% ↔ 4%" },
 ];
 
 export function TornadoChart() {
+  const c = useChartColors();
   const data = useMemo(
     () =>
       [...drivers]
         .map((d) => ({ ...d, magnitude: Math.abs(d.high) + Math.abs(d.low) }))
-        .sort((a, b) => b.magnitude - a.magnitude)
-        .map((d) => ({
-          ...d,
-          // Use a single bar with low and high segments via two bars
-        })),
+        .sort((a, b) => b.magnitude - a.magnitude),
     []
   );
 
@@ -61,35 +60,35 @@ export function TornadoChart() {
             type="number"
             domain={[-maxAbs * 1.05, maxAbs * 1.05]}
             tickFormatter={(v) => `${v < 0 ? "-" : "+"}$${Math.abs(v / 1e6).toFixed(0)}M`}
-            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-            stroke="hsl(var(--border))"
+            tick={{ fill: c["--muted-foreground"], fontSize: 11 }}
+            stroke={c["--border"]}
           />
           <YAxis
             type="category"
             dataKey="label"
             width={170}
-            tick={{ fill: "hsl(var(--foreground))", fontSize: 12 }}
-            stroke="hsl(var(--border))"
+            tick={{ fill: c["--foreground"], fontSize: 12 }}
+            stroke={c["--border"]}
           />
-          <ReferenceLine x={0} stroke="hsl(var(--border))" />
+          <ReferenceLine x={0} stroke={c["--border"]} />
           <Tooltip
             contentStyle={{
-              background: "hsl(var(--surface-raised))",
-              border: "1px solid hsl(var(--border))",
+              background: c["--surface-raised"],
+              border: `1px solid ${c["--border"]}`,
               fontSize: 12,
               borderRadius: 8,
             }}
             formatter={(v: number) => fmtCurrency(v, { compact: true })}
-            labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
+            labelStyle={{ color: c["--foreground"], fontWeight: 600 }}
           />
-          <Bar dataKey="low" stackId="x" name="Downside">
+          <Bar dataKey="low" stackId="x" name="Downside" isAnimationActive={false} shape={(props: any) => <SafeBarRect {...props} />}>
             {data.map((_, i) => (
-              <Cell key={`l-${i}`} fill="hsl(var(--danger))" />
+              <Cell key={`l-${i}`} fill={c["--negative"]} />
             ))}
           </Bar>
-          <Bar dataKey="high" stackId="x" name="Upside">
+          <Bar dataKey="high" stackId="x" name="Upside" isAnimationActive={false} shape={(props: any) => <SafeBarRect {...props} />}>
             {data.map((_, i) => (
-              <Cell key={`h-${i}`} fill="hsl(var(--success))" />
+              <Cell key={`h-${i}`} fill={c["--positive"]} />
             ))}
           </Bar>
         </BarChart>
@@ -102,14 +101,14 @@ export function TornadoLegend() {
   return (
     <div className="mt-4 flex flex-wrap items-center gap-4 text-[12px] text-[hsl(var(--muted-foreground))]">
       <span className="inline-flex items-center gap-2">
-        <span className="inline-block h-2.5 w-2.5 rounded-full bg-[hsl(var(--success))]" />
-        Upside vs Base NPV @ 7%
+        <span className="inline-block h-2.5 w-2.5 rounded-full bg-[hsl(var(--positive))]" />
+        Upside vs Base Net Present Value (NPV) @ 7%
       </span>
       <span className="inline-flex items-center gap-2">
-        <span className="inline-block h-2.5 w-2.5 rounded-full bg-[hsl(var(--danger))]" />
-        Downside vs Base NPV @ 7%
+        <span className="inline-block h-2.5 w-2.5 rounded-full bg-[hsl(var(--negative))]" />
+        Downside vs Base Net Present Value (NPV) @ 7%
       </span>
-      <span>Magnitudes derived from v7 scenario sweep ranges.</span>
+      <span>Magnitudes Derived From v7 Scenario Sweep Ranges.</span>
     </div>
   );
 }

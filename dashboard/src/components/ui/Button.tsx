@@ -12,12 +12,18 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 export const Button = forwardRef<HTMLButtonElement, Props>(
   ({ className, variant = "default", size = "md", ...props }, ref) => {
     const variantClass = {
+      // Solid primary fill — slate-blue accent + light text + subtle shadow
       default:
-        "bg-[hsl(var(--foreground))] text-[hsl(var(--surface))] hover:opacity-90",
+        "bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] shadow-sm hover:opacity-90 hover:shadow",
+      // Visible filled outline — surface-raised fill, not transparent
       outline:
-        "border border-[hsl(var(--border))] bg-transparent hover:bg-[hsl(var(--surface-raised))]",
-      ghost: "bg-transparent hover:bg-[hsl(var(--surface-raised))]",
-      accent: "bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:opacity-90",
+        "bg-[hsl(var(--surface-raised))] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] shadow-sm hover:bg-[hsl(var(--accent-soft))] hover:shadow",
+      // Subtle (icon-only chrome)
+      ghost:
+        "bg-transparent text-[hsl(var(--foreground))] hover:bg-[hsl(var(--surface-raised))]",
+      // Same as default — explicit accent variant
+      accent:
+        "bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] shadow-sm hover:opacity-90 hover:shadow",
     }[variant];
 
     const sizeClass = {

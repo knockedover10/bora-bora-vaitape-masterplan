@@ -1,81 +1,118 @@
 import {
   ComposedChart, Line, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Legend, ReferenceLine,
 } from "recharts";
-import { dcf, inputs } from "@/data/model";
 import { fmtCurrency } from "@/lib/utils";
+import type { ScenarioBundle } from "@/hooks/useScenarios";
+import type { ModelInputs } from "@/hooks/useModelInputs";
+import { useChartColors } from "@/hooks/useChartColors";
 
-export function DcfLineChart() {
-  // Separate terminal value from operating cashflow at Y12 so the line
-  // doesn't get crushed by the terminal-value spike.
-  const baseY12NoTerminal = dcf.base.cashflows[12]
-    - (dcf.base.cashflows[11] * (1 + inputs.noi_growth)) / inputs.cap_rate;
-  const stressY12NoTerminal = dcf.stress.cashflows[12]
-    - (dcf.stress.cashflows[11] * (1 + inputs.noi_growth)) / inputs.cap_rate;
+interface Props {
+  base: ScenarioBundle;
+  stress: ScenarioBundle;
+  inputs: ModelInputs;
+}
 
-  const data = dcf.base.cashflows.map((cf, i) => ({
+/**
+ * Live-recomputed DCF line chart using the cashflows on each scenario bundle.
+ * Splits terminal value at exit year so the operating-cashflow line isn't
+ * crushed by the terminal spike.
+ */
+export function DcfLineChart({ base, stress, inputs: m }: Props) {
+  const c = useChartColors();
+  const baseCf = base.cashflows ?? [];
+  const stressCf = stress.cashflows ?? [];
+  const exit = m.holdYears;
+
+  const reverseNoi = (cfExit: number) =>
+    cfExit / (1 + (1 + m.noiGrowth) / m.capRate);
+
+  const baseNoiExit = exit >= 3 ? reverseNoi(baseCf[exit] ?? 0) : 0;
+  const stressNoiExit = exit >= 3 ? reverseNoi(stressCf[exit] ?? 0) : 0;
+  const baseTerminal = (baseCf[exit] ?? 0) - baseNoiExit;
+  const stressTerminal = (stressCf[exit] ?? 0) - stressNoiExit;
+
+  const length = Math.max(baseCf.length, stressCf.length);
+  const data = Array.from({ length }, (_, i) => ({
     year: `Y${i}`,
-    base: i === 12 ? baseY12NoTerminal : cf,
-    stress: i === 12 ? stressY12NoTerminal : dcf.stress.cashflows[i],
-    baseTerminal: i === 12 ? cf - baseY12NoTerminal : 0,
-    stressTerminal: i === 12 ? dcf.stress.cashflows[12] - stressY12NoTerminal : 0,
+    base: i === exit ? baseNoiExit : baseCf[i] ?? 0,
+    stress: i === exit ? stressNoiExit : stressCf[i] ?? 0,
+    baseTerminal: i === exit ? baseTerminal : 0,
+    stressTerminal: i === exit ? stressTerminal : 0,
   }));
 
   return (
     <div className="h-[340px] w-full">
       <ResponsiveContainer>
         <ComposedChart data={data} margin={{ top: 12, right: 24, left: 12, bottom: 8 }}>
-          <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="2 4" vertical={false} />
+          <CartesianGrid stroke={c["--border"]} strokeDasharray="2 4" vertical={false} />
           <XAxis
             dataKey="year"
-            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-            stroke="hsl(var(--border))"
+            tick={{ fill: c["--muted-foreground"], fontSize: 11 }}
+            stroke={c["--border"]}
           />
           <YAxis
             tickFormatter={(v) => `${v < 0 ? "-" : ""}$${Math.abs(v / 1e6).toFixed(0)}M`}
-            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
-            stroke="hsl(var(--border))"
+            tick={{ fill: c["--muted-foreground"], fontSize: 11 }}
+            stroke={c["--border"]}
             width={60}
           />
-          <ReferenceLine y={0} stroke="hsl(var(--border))" />
+          <ReferenceLine y={0} stroke={c["--border"]} />
           <Tooltip
             contentStyle={{
-              background: "hsl(var(--surface-raised))",
-              border: "1px solid hsl(var(--border))",
+              background: c["--surface-raised"],
+              border: `1px solid ${c["--border"]}`,
               fontSize: 12,
               borderRadius: 8,
             }}
-            formatter={(v: number, key) => [fmtCurrency(v, { compact: true }), key === "base" ? "Base" : "Stress"]}
+            formatter={(v: number, key) => [
+              fmtCurrency(v, { compact: true }),
+              key === "base" ? "Base" : key === "stress" ? "Combined Stress" : (key as string),
+            ]}
           />
           <Legend
             verticalAlign="top"
             height={32}
             iconType="circle"
-            wrapperStyle={{ fontSize: 12, color: "hsl(var(--foreground))" }}
+            wrapperStyle={{ fontSize: 12, color: c["--foreground"] }}
             formatter={(v) => {
-              if (v === "base") return "Base — operating CF";
-              if (v === "stress") return "Stress — operating CF";
-              if (v === "baseTerminal") return "Base — terminal value";
-              if (v === "stressTerminal") return "Stress — terminal value";
+              if (v === "base") return "Base — Operating Cash Flow";
+              if (v === "stress") return "Combined Stress — Operating Cash Flow";
+              if (v === "baseTerminal") return "Base — Terminal Value";
+              if (v === "stressTerminal") return "Combined Stress — Terminal Value";
               return v as string;
             }}
           />
-          <Bar dataKey="baseTerminal" name="baseTerminal" fill="hsl(var(--accent))" fillOpacity={0.45} barSize={18} stackId="t" />
-          <Bar dataKey="stressTerminal" name="stressTerminal" fill="hsl(var(--warning))" fillOpacity={0.45} barSize={18} stackId="t2" />
+          <Bar
+            dataKey="baseTerminal"
+            name="baseTerminal"
+            fill={c["--accent"]}
+            fillOpacity={0.45}
+            barSize={18}
+            stackId="t"
+          />
+          <Bar
+            dataKey="stressTerminal"
+            name="stressTerminal"
+            fill={c["--negative"]}
+            fillOpacity={0.45}
+            barSize={18}
+            stackId="t2"
+          />
           <Line
             type="monotone"
             dataKey="base"
-            stroke="hsl(var(--accent))"
+            stroke={c["--accent"]}
             strokeWidth={2.5}
-            dot={{ r: 3, stroke: "hsl(var(--accent))", fill: "hsl(var(--surface-raised))" }}
+            dot={{ r: 3, stroke: c["--accent"], fill: c["--surface-raised"] }}
             activeDot={{ r: 5 }}
           />
           <Line
             type="monotone"
             dataKey="stress"
-            stroke="hsl(var(--warning))"
+            stroke={c["--negative"]}
             strokeWidth={2.5}
             strokeDasharray="5 4"
-            dot={{ r: 3, stroke: "hsl(var(--warning))", fill: "hsl(var(--surface-raised))" }}
+            dot={{ r: 3, stroke: c["--negative"], fill: c["--surface-raised"] }}
             activeDot={{ r: 5 }}
           />
         </ComposedChart>

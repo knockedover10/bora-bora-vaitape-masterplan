@@ -41,9 +41,9 @@ export function ScenarioBar({
                     "inline-flex h-8 items-center gap-2 rounded-full border px-3 text-[12.5px] font-medium transition-colors focus-ring",
                     on
                       ? isPrimary
-                        ? "border-[hsl(var(--accent))] bg-[hsl(var(--accent))/10%] text-[hsl(var(--accent))]"
-                        : "border-[hsl(var(--border))] bg-[hsl(var(--surface-raised))] text-[hsl(var(--foreground))] hover:border-[hsl(var(--accent))/40%]"
-                      : "border-[hsl(var(--border))] bg-transparent text-[hsl(var(--muted-foreground))] cursor-not-allowed opacity-60"
+                        ? "border-[hsl(var(--accent))] bg-[hsl(var(--accent-soft))] text-[hsl(var(--accent))]"
+                        : "border-[hsl(var(--border))] bg-[hsl(var(--surface-raised))] text-[hsl(var(--foreground))] hover:border-[hsl(var(--accent))/60%]"
+                      : "border-[hsl(var(--border))] bg-[hsl(var(--surface))] text-[hsl(var(--muted-foreground))] cursor-not-allowed opacity-60"
                   )}
                 >
                   <span
@@ -67,7 +67,7 @@ export function ScenarioBar({
         <div className="ml-auto">
           <Button variant="outline" size="sm" onClick={onEditCustoms}>
             <Settings2 size={14} />
-            Edit Customs
+            Edit Scenarios
           </Button>
         </div>
       </div>

@@ -10,17 +10,18 @@ export function SensitivityGrid() {
   return (
     <div className="card-base p-5">
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h3 className="text-[15px] font-semibold tracking-tight">ADR × Occupancy — NOI</h3>
+        <h3 className="text-[15px] font-semibold tracking-tight">Average Daily Rate (ADR) × Occupancy — Net Operating Income (NOI)</h3>
         <span className="text-[12px] text-[hsl(var(--muted-foreground))]">
-          Coloured by Dev Yield (NOI ÷ $42M)
+          Coloured By Development Yield (NOI ÷ $42M)
         </span>
       </div>
       <div className="-mx-2 overflow-x-auto">
         <table className="w-full min-w-[560px] border-collapse text-[12.5px] num">
           <thead>
             <tr className="text-left">
-              <th className="px-2 py-1.5 label-caps font-medium">ADR \ Occ</th>
+              <th className="px-2 py-1.5 label-caps font-medium">ADR \ Occupancy</th>
               {sensitivityNOI.occHeaders.map((h) => (
+                /* Title Case occupancy header — strip lowercase 'Occ' from anchor strings */
                 <th
                   key={h}
                   className="px-2 py-1.5 label-caps text-right font-medium"
@@ -44,7 +45,7 @@ export function SensitivityGrid() {
                       : yld >= 0.08
                       ? "bg-[hsl(var(--warning))/14%] text-[hsl(var(--warning))]"
                       : "bg-[hsl(var(--danger))/14%] text-[hsl(var(--danger))]";
-                  const isBase = r.label === "ADR Base" && i === 3; // Occ 65%
+                  const isBase = r.label === "Average Daily Rate Base" && i === 3; // Occupancy 65%
                   return (
                     <td
                       key={i}
@@ -96,16 +97,16 @@ export function CapRateOpCostGrid() {
   return (
     <div className="card-base p-5">
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h3 className="text-[15px] font-semibold tracking-tight">Cap Rate × Op Cost — Asset Value</h3>
+        <h3 className="text-[15px] font-semibold tracking-tight">Capitalisation Rate × Operating Cost — Asset Value</h3>
         <span className="text-[12px] text-[hsl(var(--muted-foreground))]">
-          AV = NOI ÷ exit cap
+          Asset Value = Net Operating Income ÷ Exit Cap Rate
         </span>
       </div>
       <div className="-mx-2 overflow-x-auto">
         <table className="w-full min-w-[560px] border-collapse text-[12.5px] num">
           <thead>
             <tr className="text-left">
-              <th className="px-2 py-1.5 label-caps font-medium">OpEx \ Cap</th>
+              <th className="px-2 py-1.5 label-caps font-medium">Operating Expenses \ Cap Rate</th>
               {caps.map((c) => (
                 <th key={c} className="px-2 py-1.5 label-caps text-right font-medium">
                   {fmtPercent(c, 1)}
@@ -150,8 +151,8 @@ export function CapRateOpCostGrid() {
         </table>
       </div>
       <p className="mt-3 text-[11.5px] text-[hsl(var(--muted-foreground))] num">
-        Highlighted cell = Base (OpEx 72% × Cap 6.5%). Anchor base NOI ${(baseNoi / 1e6).toFixed(2)}M;
-        GOP margin {fmtPercent(baseGopMargin, 0)} held constant.
+        Highlighted Cell = Base (Operating Expenses 72% × Cap Rate 6.5%). Anchor Base Net Operating Income ${(baseNoi / 1e6).toFixed(2)}M;
+        Gross Operating Profit Margin {fmtPercent(baseGopMargin, 0)} Held Constant.
       </p>
     </div>
   );
@@ -162,11 +163,11 @@ function Legend() {
     <div className="mt-3 flex flex-wrap items-center gap-3 text-[11.5px] text-[hsl(var(--muted-foreground))]">
       <span className="inline-flex items-center gap-1.5">
         <span className="inline-block h-2.5 w-2.5 rounded-sm bg-[hsl(var(--success))/40%]" />
-        Green: Dev Yield ≥ 10%
+        Green: Development Yield ≥ 10%
       </span>
       <span className="inline-flex items-center gap-1.5">
         <span className="inline-block h-2.5 w-2.5 rounded-sm bg-[hsl(var(--warning))/40%]" />
-        Gold: 8–10% (patient-capital)
+        Gold: 8–10% (Patient-Capital)
       </span>
       <span className="inline-flex items-center gap-1.5">
         <span className="inline-block h-2.5 w-2.5 rounded-sm bg-[hsl(var(--danger))/40%]" />

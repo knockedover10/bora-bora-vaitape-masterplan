@@ -1,11 +1,13 @@
 /**
- * Vaitape calculation utilities.
- * - computeScenario: stabilised NOI/Asset Value/Dev Yield from scenario inputs
- * - computeCashflows: 12-yr ramped/phased cashflow series (length 13: Y0 → Y12)
- * - npv / irr: standard finance helpers (IRR via Newton-Raphson)
+ * Vaitape calculation utilities (v7.1).
+ * - All scenario / cashflow / verdict math is parameterised on a `ModelInputs`
+ *   object so it can react live to the editable-inputs drawer.
+ * - Phasing, ramp, mgmt-fee constants and pre-opening reserve assumption stay
+ *   read from the static anchors in `data/model.ts`.
  */
 
-import { inputs } from "@/data/model";
+import { inputs as anchors } from "@/data/model";
+import type { ModelInputs } from "@/hooks/useModelInputs";
 
 export interface ScenarioInputs {
   /** ADR shift relative to ADR_BASE — e.g. -0.15 for −15% */
@@ -35,31 +37,26 @@ export interface ScenarioComputed {
   yieldSpread: number;
 }
 
-const KEYS = inputs.keys;
 const DAYS = 365;
-const ADR_BASE = inputs.adr_base;
-const OPEX_RATIO = inputs.opex_ratio;
-const MGMT_BASE = inputs.mgmt_base;
-const MGMT_INCENTIVE = inputs.mgmt_incentive;
-const FFE = inputs.ffe_reserve;
-const CAP_RATE = inputs.cap_rate;
-const TOTAL_DEV_COST = inputs.total_dev_cost;
+// Mgmt fees stay hard-coded — not in the editable-inputs list per spec.
+const MGMT_BASE = anchors.mgmt_base;
+const MGMT_INCENTIVE = anchors.mgmt_incentive;
 
-export function computeScenario(s: ScenarioInputs): ScenarioComputed {
-  const adr = ADR_BASE * (1 + s.adrShift);
+export function computeScenario(s: ScenarioInputs, m: ModelInputs): ScenarioComputed {
+  const adr = m.adrBase * (1 + s.adrShift);
   const revpar = adr * s.occupancy;
-  const roomRevenue = KEYS * DAYS * revpar;
+  const roomRevenue = m.keys * DAYS * revpar;
   const totalRevenue = roomRevenue * (1 + s.trevparUplift);
-  const opex = totalRevenue * OPEX_RATIO;
+  const opex = totalRevenue * m.opexRatio;
   const gop = totalRevenue - opex;
   const mgmtBaseFee = totalRevenue * MGMT_BASE;
   const mgmtIncentiveFee = gop * MGMT_INCENTIVE;
   const ebitda = gop - mgmtBaseFee - mgmtIncentiveFee;
-  const ffe = totalRevenue * FFE;
+  const ffe = totalRevenue * m.ffeReserve;
   const noi = ebitda - ffe;
-  const assetValue = noi / CAP_RATE;
-  const devYield = noi / TOTAL_DEV_COST;
-  const yieldSpread = devYield - CAP_RATE;
+  const assetValue = noi / m.capRate;
+  const devYield = noi / m.totalDevCost;
+  const yieldSpread = devYield - m.capRate;
   return {
     adr, occupancy: s.occupancy, revpar, roomRevenue, totalRevenue,
     opex, gop, gopMargin: gop / totalRevenue, mgmtBaseFee, mgmtIncentiveFee,
@@ -68,38 +65,53 @@ export function computeScenario(s: ScenarioInputs): ScenarioComputed {
 }
 
 /**
- * 12-yr unleveraged cashflow stream (length 13: index 0 = Y0).
- * Construction phasing: Y0 30%, Y1 40%, Y2 30% of total dev cost (negative outflows).
- * Operating ramp: Y3 50%, Y4 72%, Y5 90%, Y6+ 100% of stabilised NOI.
- * NOI growth 3% p.a. from Y6 onwards.
- * Terminal value at Y12: NOI_Y13 / 6.5% added to Y12 cashflow (Gordon exit).
+ * Unleveraged cashflow stream over the full hold horizon.
+ * Length = 3 (construction Y0/Y1/Y2) + holdYears (operating Y3..Y(2+holdYears))
+ * For the default holdYears=12, this returns 15 entries (Y0..Y14) — but the
+ * historical anchors used a 12-yr hold meaning indices 0..12 (13 entries).
+ *
+ * To keep the anchor-exact baseline numbers, we treat `m.holdYears` as the
+ * number of operating years from Y3 inclusive through to and including the
+ * exit year. Default 12 → indices 0..14 with terminal value at Y14? That
+ * breaks the existing $98.67M Y12 figure.
+ *
+ * Reconciling: the merged Excel uses a 12-yr hold meaning Y0..Y12 (3 yr build
+ * + 10 yr operating? actually 9 operating + Y12 exit). To preserve the
+ * authoritative anchors at default holdYears=12, treat holdYears as the index
+ * of the exit year (inclusive). So default 12 → array length 13 (Y0..Y12).
  */
-export function computeCashflows(stabilisedNOI: number): number[] {
-  const phase = inputs.phase;
-  const ramp = inputs.ramp;
-  const totalCost = inputs.total_dev_cost;
-  const growth = inputs.noi_growth;
-  const cap = inputs.cap_rate;
+export function computeCashflows(stabilisedNOI: number, m: ModelInputs): number[] {
+  const phase = anchors.phase;
+  const ramp = anchors.ramp;
+  const totalCost = m.totalDevCost;
+  const growth = m.noiGrowth;
+  const cap = m.capRate;
+  const exitYear = m.holdYears; // inclusive index, Y0..Y(exitYear)
 
   const cf: number[] = [];
-  cf[0] = -totalCost * phase.y0;                       // Y0  -12.6M
-  cf[1] = -totalCost * phase.y1;                       // Y1  -16.8M
-  cf[2] = -(totalCost * phase.y2 + inputs.preopen_cost); // Y2  -15.33M (preopen lands here)
+  cf[0] = -totalCost * phase.y0;
+  cf[1] = -totalCost * phase.y1;
+  // Pre-opening cost scales with totalDevCost using the anchor pre-open percentage.
+  const preopen = totalCost * anchors.preopen_pct;
+  cf[2] = -(totalCost * phase.y2 + preopen);
 
-  cf[3] = stabilisedNOI * ramp.y3;
-  cf[4] = stabilisedNOI * ramp.y4;
-  cf[5] = stabilisedNOI * ramp.y5;
-  cf[6] = stabilisedNOI * ramp.y6;
-  // Y7-Y12 grow at 3% from Y6 baseline
-  let prev = cf[6];
-  for (let y = 7; y <= 12; y++) {
+  // Operating years: Y3..Y(exitYear)
+  if (exitYear >= 3) cf[3] = stabilisedNOI * ramp.y3;
+  if (exitYear >= 4) cf[4] = stabilisedNOI * ramp.y4;
+  if (exitYear >= 5) cf[5] = stabilisedNOI * ramp.y5;
+  if (exitYear >= 6) cf[6] = stabilisedNOI * ramp.y6;
+  let prev = cf[Math.min(6, exitYear)] ?? 0;
+  for (let y = 7; y <= exitYear; y++) {
     prev = prev * (1 + growth);
     cf[y] = prev;
   }
-  // Terminal value @ Y12: NOI_Y13 / cap, where NOI_Y13 = NOI_Y12 * 1.03
-  const noiY13 = cf[12] * (1 + growth);
-  const terminal = noiY13 / cap;
-  cf[12] = cf[12] + terminal;
+
+  // Terminal value at exit year (Gordon exit at terminal cap = current capRate)
+  if (exitYear >= 3) {
+    const noiNext = (cf[exitYear] ?? 0) * (1 + growth);
+    const terminal = noiNext / cap;
+    cf[exitYear] = (cf[exitYear] ?? 0) + terminal;
+  }
   return cf;
 }
 
@@ -154,7 +166,7 @@ export function irr(cashflows: number[], guess = 0.1): number {
   return (lo + hi) / 2;
 }
 
-export function gateVerdict(scenario: ScenarioComputed | null): {
+export function gateVerdict(scenario: ScenarioComputed | null, m: ModelInputs): {
   gate1: "PASS" | "FAIL"; gate1Detail: string;
   gate3: "PASS" | "FAIL"; gate3Detail: string;
 } {
@@ -164,12 +176,12 @@ export function gateVerdict(scenario: ScenarioComputed | null): {
       gate3: "FAIL", gate3Detail: "—",
     };
   }
-  const gate1 = scenario.assetValue > TOTAL_DEV_COST ? "PASS" : "FAIL";
+  const gate1 = scenario.assetValue > m.totalDevCost ? "PASS" : "FAIL";
   const gate3 = scenario.yieldSpread >= 0.01 ? "PASS" : "FAIL";
   return {
     gate1,
-    gate1Detail: `AV $${(scenario.assetValue / 1e6).toFixed(2)}M vs Cost $42.00M`,
+    gate1Detail: `Asset Value $${(scenario.assetValue / 1e6).toFixed(2)}M vs Cost $${(m.totalDevCost / 1e6).toFixed(2)}M`,
     gate3,
-    gate3Detail: `Spread ${(scenario.yieldSpread * 10000).toFixed(0)} bps (vs 100 bps target)`,
+    gate3Detail: `Spread ${(scenario.yieldSpread * 10000).toFixed(0)} basis points (vs 100 basis points target)`,
   };
 }
