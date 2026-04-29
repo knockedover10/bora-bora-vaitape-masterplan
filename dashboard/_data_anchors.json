@@ -1,0 +1,449 @@
+{
+  "inputs": {
+    "keys": 35,
+    "site_area_sqm": 15000,
+    "gfa_per_key": 192,
+    "adr_base": 2150,
+    "occ_base": 0.65,
+    "trevpar_premium": 0.35,
+    "trevpar_kpmg_excluded": 0.65,
+    "opex_ratio": 0.72,
+    "mgmt_base": 0.03,
+    "mgmt_incentive": 0.08,
+    "ffe_reserve": 0.03,
+    "cost_per_key": 1200000,
+    "preopen_pct": 0.065,
+    "cap_rate": 0.065,
+    "noi_growth": 0.03,
+    "hold_years": 12,
+    "patient_floor": 0.08,
+    "patient_ceiling": 0.12,
+    "discount_patient": 0.07,
+    "discount_mid": 0.09,
+    "discount_pe": 0.11,
+    "defisc_rate": 0.25,
+    "defisc_cap_xpf": 500000000,
+    "fx_xpf_usd": 119.5,
+    "ramp_y3": 0.5,
+    "ramp_y4": 0.72,
+    "ramp_y5": 0.9,
+    "phase_y0": 0.3,
+    "phase_y1": 0.4,
+    "phase_y2": 0.3,
+    "total_gfa": 6720,
+    "plot_ratio": 0.448,
+    "total_dev_cost": 42000000,
+    "preopen_cost": 2730000,
+    "defisc_effective": 4184100.41841004
+  },
+  "scenarios": [
+    {
+      "col": "C",
+      "label": "Base Case",
+      "adr": 2150,
+      "occ": 0.65,
+      "revpar": 1397.5,
+      "trevpar_uplift": 0.35,
+      "total_revenue": 24101634.375,
+      "noi": 4762482.9525,
+      "gop": 6748457.625,
+      "gop_margin": 0.28,
+      "ebitda": 5485531.98375,
+      "asset_value": 73268968.5,
+      "dev_yield": 0.11339245125,
+      "yield_spread": 0.04839245125,
+      "gate1": "PASS",
+      "gate3": "PASS"
+    },
+    {
+      "col": "D",
+      "label": "Upside",
+      "adr": 2472.5,
+      "occ": 0.72,
+      "revpar": 1780.2,
+      "trevpar_uplift": 0.35,
+      "total_revenue": 30701774.25,
+      "noi": 6066670.5918,
+      "gop": 8596496.79,
+      "gop_margin": 0.28,
+      "ebitda": 6987723.8193,
+      "asset_value": 93333393.72,
+      "dev_yield": 0.1444445379,
+      "yield_spread": 0.0794445379,
+      "gate1": "PASS",
+      "gate3": "PASS"
+    },
+    {
+      "col": "E",
+      "label": "Combined Stress",
+      "adr": 1827.5,
+      "occ": 0.5,
+      "revpar": 913.75,
+      "trevpar_uplift": 0.35,
+      "total_revenue": 15758760.9375,
+      "noi": 3113931.16125,
+      "gop": 4412453.0625,
+      "gop_margin": 0.28,
+      "ebitda": 3586693.989375,
+      "asset_value": 47906633.25,
+      "dev_yield": 0.074141218125,
+      "yield_spread": 0.00914121812499999,
+      "gate1": "PASS",
+      "gate3": "FAIL"
+    },
+    {
+      "col": "F",
+      "label": "Custom A",
+      "adr": "\u2014",
+      "occ": "\u2014",
+      "revpar": "\u2014",
+      "trevpar_uplift": "\u2014",
+      "total_revenue": "\u2014",
+      "noi": "\u2014",
+      "gop": "\u2014",
+      "gop_margin": "\u2014",
+      "ebitda": "\u2014",
+      "asset_value": "\u2014",
+      "dev_yield": "\u2014",
+      "yield_spread": "\u2014",
+      "gate1": "\u2014",
+      "gate3": "\u2014"
+    },
+    {
+      "col": "G",
+      "label": "Custom B",
+      "adr": "\u2014",
+      "occ": "\u2014",
+      "revpar": "\u2014",
+      "trevpar_uplift": "\u2014",
+      "total_revenue": "\u2014",
+      "noi": "\u2014",
+      "gop": "\u2014",
+      "gop_margin": "\u2014",
+      "ebitda": "\u2014",
+      "asset_value": "\u2014",
+      "dev_yield": "\u2014",
+      "yield_spread": "\u2014",
+      "gate1": "\u2014",
+      "gate3": "\u2014"
+    },
+    {
+      "col": "H",
+      "label": "Custom C",
+      "adr": "\u2014",
+      "occ": "\u2014",
+      "revpar": "\u2014",
+      "trevpar_uplift": "\u2014",
+      "total_revenue": "\u2014",
+      "noi": "\u2014",
+      "gop": "\u2014",
+      "gop_margin": "\u2014",
+      "ebitda": "\u2014",
+      "asset_value": "\u2014",
+      "dev_yield": "\u2014",
+      "yield_spread": "\u2014",
+      "gate1": "\u2014",
+      "gate3": "\u2014"
+    }
+  ],
+  "dcf": {
+    "base_irr": 0.132132781593379,
+    "stress_irr": 0.0796021588847064,
+    "base_npv7": 27509295.8689708,
+    "stress_npv7": 3555433.73914214,
+    "base_npv9": 16438556.9944855,
+    "stress_npv9": -3414873.69596192,
+    "base_npv11": 7652968.73807797,
+    "stress_npv11": -8903665.18398358,
+    "base_cashflows": [
+      -12600000,
+      -16800000,
+      -15330000,
+      2381241.47625,
+      3428987.7258,
+      4286234.65725,
+      4762482.9525,
+      5052518.16430725,
+      5204093.70923647,
+      5360216.52051356,
+      5521023.01612897,
+      5686653.70661284,
+      98672190.5077429
+    ],
+    "stress_cashflows": [
+      -12600000,
+      -16800000,
+      -15330000,
+      1556965.580625,
+      2242030.4361,
+      2802538.045125,
+      3113931.16125,
+      3303569.56897012,
+      3402676.65603923,
+      3504756.95572041,
+      3609899.66439202,
+      3718196.65432378,
+      64516432.2550627
+    ]
+  },
+  "sensitivity_adr_occ": [
+    {
+      "row": 2,
+      "vals": [
+        "6.4  ADR \u00d7 Occupancy Sensitivity",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "row": 3,
+      "vals": [
+        "Two-way matrix: NOI (USD, left) and Development Yield (%, right) at varying ADR and Occupancy. Green \u226510% yield, Gold 8\u201310%, Red <8%.",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "row": 5,
+      "vals": [
+        "NOI (USD)",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        "Development Yield (NOI \u00f7 Build Cost)",
+        null,
+        null
+      ]
+    },
+    {
+      "row": 6,
+      "vals": [
+        "ADR \\ Occ",
+        "Occ 45%",
+        "Occ 50%",
+        "Occ 55%",
+        "Occ 65% (Base)",
+        "Occ 75%",
+        null,
+        "ADR \\ Occ",
+        "Occ 45%",
+        "Occ 50%"
+      ]
+    },
+    {
+      "row": 7,
+      "vals": [
+        "ADR \u221215%",
+        2802538.045125,
+        3113931.16125,
+        3425324.277375,
+        4048110.509625,
+        4670896.741875,
+        null,
+        "ADR \u221215%",
+        0.0667270963125,
+        0.074141218125
+      ]
+    },
+    {
+      "row": 8,
+      "vals": [
+        "ADR \u221210%",
+        2967393.22425,
+        3297103.5825,
+        3626813.94075,
+        4286234.65725,
+        4945655.37375,
+        null,
+        "ADR \u221210%",
+        0.070652219625,
+        0.07850246625
+      ]
+    },
+    {
+      "row": 9,
+      "vals": [
+        "ADR Base",
+        3297103.5825,
+        3663448.425,
+        4029793.2675,
+        4762482.9525,
+        5495172.6375,
+        null,
+        "ADR Base",
+        0.07850246625,
+        0.0872249625
+      ]
+    },
+    {
+      "row": 10,
+      "vals": [
+        "ADR +10%",
+        3626813.94075,
+        4029793.2675,
+        4432772.59425,
+        5238731.24775,
+        6044689.90125,
+        null,
+        "ADR +10%",
+        0.086352712875,
+        0.09594745875
+      ]
+    },
+    {
+      "row": 11,
+      "vals": [
+        "ADR +15%",
+        3791669.119875,
+        4212965.68875,
+        4634262.257625,
+        5476855.395375,
+        6319448.533125,
+        null,
+        "ADR +15%",
+        0.0902778361875,
+        0.100308706875
+      ]
+    },
+    {
+      "row": 13,
+      "vals": [
+        "Investor insight",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "row": 14,
+      "vals": [
+        "Base case (ADR $2,150 \u00d7 Occ 65%) sits at 11.3% development yield \u2014 comfortably green. The asset stays investable (gold 8\u201310%) even at ADR \u221215% \u00d7 Occ 55%. The matrix collapses into red only at ADR \u221215% \u00d7 Occ \u226445% (cyclone + pricing collapse simultaneously). This is the structural cushion patient capital is paying for.",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "row": 16,
+      "vals": [
+        "\u2500\u2500 COLOUR LEGEND & INVESTOR INTERPRETATION \u2500\u2500",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "row": 17,
+      "vals": [
+        "GREEN",
+        "Dev yield \u2265 10% \u2014 target exceeded. Strong value-creation across cap-rate range.",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "row": 18,
+      "vals": [
+        "GOLD",
+        "Dev yield 8\u201310% \u2014 investable for patient capital. Within 8\u201312% IRR band; clears yield-on-cost floor.",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "row": 19,
+      "vals": [
+        "RED",
+        "Dev yield < 8% \u2014 below patient-capital floor. Asset value < build cost; project loses value vs sunk capital.",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "row": 21,
+      "vals": [
+        "Formula: NOI = [ADR \u00d7 Occupancy \u00d7 (1 + 35% TRevPAR) \u00d7 35 keys \u00d7 365] \u00d7 (1 \u2212 72% OpCost) \u2212 Mgmt Fees \u2212 FF&E Reserve. Dev Yield = NOI \u00f7 $42M development cost. The matrix shows 25 ADR\u00d7Occupancy permutations: ADR \u00b115% on Base $2,150; Occupancy 45\u201375% in 5pp steps. Even at 45% occupancy with Base ADR, dev yield clears the 8% patient-capital floor in most cells \u2014 confirming downside resilience.",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "row": 23,
+      "vals": [
+        "Source: HVS Hotel Investment Analysis 12th ed., 2021; STR Global ultra-luxury benchmarks; JLL APAC Hotel Investment Outlook 2024.",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  ],
+  "sources_count": 46,
+  "independence_present": true,
+  "defisc_present": true
+}

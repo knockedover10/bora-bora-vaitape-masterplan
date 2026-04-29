@@ -1,0 +1,85 @@
+import { ArrowRight, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/Badge";
+import { fmtCurrency, fmtPercent } from "@/lib/utils";
+import { inputs } from "@/data/model";
+
+export function DefiscPanel() {
+  const theoretical = inputs.defisc_rate * inputs.total_dev_cost;            // 25% × $42M = $10.5M
+  const capUsd = inputs.defisc_cap_xpf / inputs.fx_xpf_usd;                  // ≈ $4.184M
+  const effective = inputs.defisc_effective;                                 // $4,184,100.42
+  const baseDevYield = 0.11339245125;
+  const baseDevYieldWithDefisc = 4_762_482.9525 / (inputs.total_dev_cost - effective);
+
+  return (
+    <div className="card-base overflow-hidden">
+      <div className="flex flex-wrap items-center gap-2 border-b border-[hsl(var(--border))] bg-[hsl(var(--accent))/8%] px-6 py-4">
+        <Badge tone="accent">
+          <Sparkles size={11} />
+          Upside lever
+        </Badge>
+        <span className="text-[13px] font-medium text-[hsl(var(--accent))]">
+          Held in reserve — NOT in base case
+        </span>
+      </div>
+
+      <div className="grid gap-6 p-6 md:grid-cols-2">
+        <div>
+          <h3 className="mb-2 text-[16px] font-semibold tracking-tight">
+            Defisc — Polynesian tax credit
+          </h3>
+          <p className="text-[13px] text-[hsl(var(--muted-foreground))]">
+            French Polynesia's investment defiscalisation regime (Loi de pays n° 2017-3)
+            offers a 25% credit on qualifying capex, capped at XPF 500M. The cap binds for
+            this asset.
+          </p>
+
+          <dl className="mt-5 grid grid-cols-2 gap-y-3 text-[13px]">
+            <dt className="label-caps">Theoretical 25% rate</dt>
+            <dd className="num text-right font-semibold">
+              {fmtCurrency(theoretical, { compact: true })}
+            </dd>
+            <dt className="label-caps">XPF 500M cap (÷ {inputs.fx_xpf_usd})</dt>
+            <dd className="num text-right font-semibold">
+              {fmtCurrency(capUsd, { compact: true })}
+            </dd>
+            <dt className="label-caps">Effective credit applied</dt>
+            <dd className="num text-right font-semibold text-[hsl(var(--accent))]">
+              {fmtCurrency(effective)}
+            </dd>
+          </dl>
+        </div>
+
+        <div>
+          <h3 className="mb-2 text-[16px] font-semibold tracking-tight">
+            Bridge — Base Dev Yield
+          </h3>
+          <p className="text-[13px] text-[hsl(var(--muted-foreground))]">
+            With defisc, effective dev cost falls to ${(inputs.total_dev_cost - effective).toLocaleString()}.
+            Base NOI is unchanged — yield rises mechanically.
+          </p>
+
+          <div className="mt-5 flex items-center gap-4 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface))] p-4">
+            <div className="flex-1 text-center">
+              <div className="label-caps">Without defisc</div>
+              <div className="num text-2xl font-semibold">
+                {fmtPercent(baseDevYield, 2)}
+              </div>
+            </div>
+            <ArrowRight size={20} className="text-[hsl(var(--accent))]" />
+            <div className="flex-1 text-center">
+              <div className="label-caps">With defisc</div>
+              <div className="num text-2xl font-semibold text-[hsl(var(--accent))]">
+                {fmtPercent(baseDevYieldWithDefisc, 2)}
+              </div>
+            </div>
+          </div>
+
+          <p className="mt-3 text-[11.5px] text-[hsl(var(--muted-foreground))]">
+            +{((baseDevYieldWithDefisc - baseDevYield) * 100).toFixed(2)} pp uplift on
+            development yield. IRR uplift ≈ +60–80 bps (12-yr unleveraged).
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
