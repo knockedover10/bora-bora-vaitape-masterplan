@@ -137,6 +137,7 @@ export default function App() {
         {tab === "overview" && (
           <TabVerdict
             active={active}
+            scenarios={scenarios}
             inputs={inputs}
             isModified={isModified}
             onJumpToAppendix={() => setTab("appendix")}

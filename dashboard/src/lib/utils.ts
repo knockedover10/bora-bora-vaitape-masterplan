@@ -16,13 +16,17 @@ const usdFine = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
 });
 
-export function fmtCurrency(n: number | null | undefined, opts?: { compact?: boolean; fine?: boolean }) {
+export function fmtCurrency(
+  n: number | null | undefined,
+  opts?: { compact?: boolean; fine?: boolean; signed?: boolean }
+) {
   if (n === null || n === undefined || Number.isNaN(n)) return "—";
   if (opts?.compact) {
     const abs = Math.abs(n);
-    if (abs >= 1_000_000) return `${n < 0 ? "-" : ""}$${(abs / 1_000_000).toFixed(2)}M`;
-    if (abs >= 1_000) return `${n < 0 ? "-" : ""}$${(abs / 1_000).toFixed(0)}K`;
-    return `$${Math.round(n)}`;
+    const sign = n < 0 ? "-" : opts?.signed ? "+" : "";
+    if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(2)}M`;
+    if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`;
+    return `${sign}$${Math.round(abs)}`;
   }
   return opts?.fine ? usdFine.format(n) : usd.format(n);
 }

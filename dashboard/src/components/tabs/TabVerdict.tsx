@@ -1,5 +1,4 @@
 import { ArrowRight, Sparkles, Check, X, AlertTriangle } from "lucide-react";
-import { KpiTile } from "@/components/KpiTile";
 import { GateTile } from "@/components/GateTile";
 import { fmtCurrency, fmtPercent, fmtBps, cn } from "@/lib/utils";
 import { inputs as anchors } from "@/data/model";
@@ -8,6 +7,7 @@ import type { ModelInputs } from "@/hooks/useModelInputs";
 
 interface Props {
   active: ScenarioBundle;
+  scenarios: ScenarioBundle[];
   inputs: ModelInputs;
   isModified: boolean;
   onJumpToAppendix: () => void;
@@ -25,102 +25,199 @@ function ModDot({ show }: { show: boolean }) {
   );
 }
 
-export function TabVerdict({ active, inputs: m, isModified, onJumpToAppendix }: Props) {
-  const noi = active.noi ?? 0;
-  const irr = active.irr12yr ?? 0;
-  const spread = active.yield_spread ?? 0;
-  const av = active.asset_value ?? 0;
+/**
+ * Headline Verdict — figures-only mirror of slide 3 of the v7.1 deck.
+ * No narrative prose; numbers carry the story. Live values from the model.
+ */
+export function TabVerdict({ active, scenarios, inputs: m, isModified, onJumpToAppendix }: Props) {
+  const base = scenarios.find((s) => s.key === "base") ?? active;
+  const stress = scenarios.find((s) => s.key === "stress") ?? active;
 
-  // Gate verdicts
-  const gate1: "PASS" | "FAIL" = av > m.totalDevCost ? "PASS" : "FAIL";
+  // Pull metric values from Base and Stress bundles
+  const devYBase = base.dev_yield ?? 0;
+  const devYStress = stress.dev_yield ?? 0;
+  const spreadBase = base.yield_spread ?? 0;
+  const spreadStress = stress.yield_spread ?? 0;
+
+  const irrBase = base.irr12yr ?? 0;
+  const irrStress = stress.irr12yr ?? 0;
+
+  const npv7Base = base.npv7 ?? 0;
+  const npv7Stress = stress.npv7 ?? 0;
+  const npv11Base = base.npv11 ?? 0;
+  const npv11Stress = stress.npv11 ?? 0;
+
+  const avBase = base.asset_value ?? 0;
+  const avStress = stress.asset_value ?? 0;
+
+  // Hurdle tests
+  const yieldBasePass = devYBase >= m.capRate;
+  const yieldStressPass = devYStress >= m.capRate;
+  const irrBasePass = irrBase >= 0.08;
+  const irrStressPass = irrStress >= 0.08;
+  const npvBasePass = npv7Base > 0;
+  const npvStressPass = npv7Stress > 0;
+
+  // Active-scenario gate verdicts (kept beneath primary KPIs for the operator view)
+  const gate1: "PASS" | "FAIL" = (active.asset_value ?? 0) > m.totalDevCost ? "PASS" : "FAIL";
   const gate2: "PASS" | "FAIL" | "MARGINAL" =
-    irr >= 0.08 && (active.npv7 ?? 0) > 0
+    (active.irr12yr ?? 0) >= 0.08 && (active.npv7 ?? 0) > 0
       ? "PASS"
       : (active.npv7 ?? 0) > 0
       ? "MARGINAL"
       : "FAIL";
   const gate3: "PASS" | "FAIL" | "MARGINAL" =
-    spread >= 0.01 ? "PASS" : spread >= 0 ? "MARGINAL" : "FAIL";
+    (active.yield_spread ?? 0) >= 0.01 ? "PASS" : (active.yield_spread ?? 0) >= 0 ? "MARGINAL" : "FAIL";
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Hero KPI tiles */}
+      {/* Headline ---------------------------------------------------------- */}
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-[20px] font-semibold tracking-tight sm:text-[22px]">Headline Verdict</h2>
+        <ModDot show={isModified} />
+      </div>
+
+      {/* Primary KPI tiles — Base + Stress stacked ------------------------ */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <KpiTile
-          label="Stabilised Net Operating Income (NOI)"
-          tone="accent"
-          value={
-            <>
-              {fmtCurrency(noi)}
-              <ModDot show={isModified} />
-            </>
-          }
-          sub={`${active.label} · Stabilised Year-7 Onwards`}
+        <PrimaryKpiTile
+          number="01"
+          title="Development Yield"
+          hurdle={`Hurdle: ≥ ${fmtPercent(m.capRate, 2)} Cap Rate`}
+          baseValue={fmtPercent(devYBase, 2)}
+          baseSub={`Base Case ${fmtBps(spreadBase)}`}
+          basePass={yieldBasePass}
+          stressValue={fmtPercent(devYStress, 2)}
+          stressSub={`Stress Case ${fmtBps(spreadStress)}`}
+          stressPass={yieldStressPass}
+          isModified={isModified}
         />
-        <KpiTile
-          label={`${m.holdYears}-Year Unleveraged Internal Rate Of Return (IRR)`}
-          tone={irr >= 0.12 ? "accent" : irr >= 0.08 ? "success" : "warning"}
-          value={
-            <>
-              {fmtPercent(irr, 2)}
-              <ModDot show={isModified} />
-            </>
-          }
-          sub={`Patient-Capital Band 8–12% · Net Present Value (NPV) @ 7% ${fmtCurrency(active.npv7 ?? 0, { compact: true })}`}
+        <PrimaryKpiTile
+          number="02"
+          title="Unleveraged Internal Rate Of Return (IRR)"
+          hurdle="Hurdle: 8–12% Patient-Capital Band"
+          baseValue={fmtPercent(irrBase, 1)}
+          baseSub="Base Case"
+          basePass={irrBasePass}
+          stressValue={fmtPercent(irrStress, 1)}
+          stressSub="Stress Case"
+          stressPass={irrStressPass}
+          isModified={isModified}
         />
-        <KpiTile
-          label="Yield-On-Cost Spread"
-          tone={spread >= 0.01 ? "success" : spread >= 0 ? "warning" : "danger"}
-          value={
-            <>
-              {fmtBps(spread)}
-              <ModDot show={isModified} />
-            </>
-          }
-          sub={`Development Yield ${fmtPercent(active.dev_yield ?? 0, 2)} vs ${fmtPercent(m.capRate, 2)} Cap Rate`}
-        />
-      </div>
-
-      {/* Gate tiles */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <GateTile
-          gateNumber={1}
-          title="Asset Value > Build Cost"
-          rule={`Asset Value ≥ ${fmtCurrency(m.totalDevCost, { compact: true })} Development Cost (Income-Capitalisation)`}
-          verdict={gate1}
-          detail={`Asset Value ${fmtCurrency(av, { compact: true })} vs Cost ${fmtCurrency(m.totalDevCost, { compact: true })}`}
-        />
-        <GateTile
-          gateNumber={2}
-          title="Patient-Capital IRR & NPV"
-          rule="IRR 8–12% With NPV @ 7% > 0"
-          verdict={gate2}
-          detail={`IRR ${fmtPercent(irr, 2)} · NPV @ 7% ${fmtCurrency(active.npv7 ?? 0, { compact: true })}`}
-        />
-        <GateTile
-          gateNumber={3}
-          title="Yield-On-Cost Spread ≥ 100 basis points (bps)"
-          rule={`(Development Yield − ${fmtPercent(m.capRate, 2)}) ≥ 100 basis points`}
-          verdict={gate3}
-          detail={`${fmtBps(spread)} Above Cap Rate`}
+        <PrimaryKpiTile
+          number="03"
+          title="Net Present Value (NPV)"
+          hurdle="Hurdle: Positive At Patient-Capital Rate"
+          baseValue={fmtCurrency(npv7Base, { compact: true, signed: true })}
+          baseSub="Base Case @ 7% Hurdle"
+          basePass={npvBasePass}
+          stressValue={fmtCurrency(npv7Stress, { compact: true, signed: true })}
+          stressSub="Stress Case @ 7% Hurdle"
+          stressPass={npvStressPass}
+          isModified={isModified}
         />
       </div>
 
-      {/* Verdict statement */}
-      <div className="card-base border-l-4 border-l-[hsl(var(--accent))] p-6">
-        <div className="label-caps mb-2 text-[hsl(var(--accent))]">Verdict</div>
-        <p className="text-[15px] leading-relaxed sm:text-[16px]">
-          Asset clears all three viability gates in <strong>Base Case</strong> and remains
-          positive-NPV at 7% in <strong>Combined Stress</strong>. Defisc treated as upside, not base.
-          Patient-capital frame holds: 12-Year IRR 13.21% Base · 7.96% Stress sit in or near the
-          8–12% endowment / sovereign / family-office band.
-        </p>
+      {/* Supporting bands ------------------------------------------------- */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Capital-Archetype Calibration (NPV @ 11% PE hurdle) */}
+        <div className="card-base p-5">
+          <div className="label-caps mb-3 text-[hsl(var(--muted-foreground))]">
+            Capital-Archetype Calibration (Net Present Value @ 11% Private-Equity Hurdle)
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-[13px]">
+            <div>
+              <div className="text-[hsl(var(--muted-foreground))]">Base Case</div>
+              <div className="num text-[15px] font-semibold">
+                {fmtCurrency(npv11Base, { compact: true, signed: true })}{" "}
+                <span
+                  className={cn(
+                    "ml-1 text-[12px] font-semibold",
+                    npv11Base > 0 ? "text-[hsl(var(--success))]" : "text-[hsl(var(--danger))]"
+                  )}
+                >
+                  {npv11Base > 0 ? "PASS" : "FAIL"}
+                </span>
+              </div>
+            </div>
+            <div>
+              <div className="text-[hsl(var(--muted-foreground))]">Stress Case</div>
+              <div className="num text-[15px] font-semibold">
+                {fmtCurrency(npv11Stress, { compact: true, signed: true })}{" "}
+                <span
+                  className={cn(
+                    "ml-1 text-[12px] font-semibold",
+                    npv11Stress > 0 ? "text-[hsl(var(--success))]" : "text-[hsl(var(--warning))]"
+                  )}
+                >
+                  {npv11Stress > 0 ? "PASS" : "FAIL"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Asset Value Surplus — KPI 1 reference */}
+        <div className="card-base p-5">
+          <div className="label-caps mb-3 text-[hsl(var(--muted-foreground))]">
+            Asset Value Surplus (Key Performance Indicator 1 Reference)
+          </div>
+          <dl className="space-y-1.5 text-[13px]">
+            <div className="flex items-baseline justify-between">
+              <dt className="text-[hsl(var(--muted-foreground))]">Implied Asset Value</dt>
+              <dd className="num font-semibold">
+                {fmtCurrency(avBase, { compact: true })} Base /{" "}
+                {fmtCurrency(avStress, { compact: true })} Stress
+              </dd>
+            </div>
+            <div className="flex items-baseline justify-between">
+              <dt className="text-[hsl(var(--muted-foreground))]">vs Total Development Cost</dt>
+              <dd className="num font-semibold">{fmtCurrency(m.totalDevCost, { compact: true })}</dd>
+            </div>
+            <div className="flex items-baseline justify-between border-t border-[hsl(var(--border))] pt-2">
+              <dt className="text-[hsl(var(--muted-foreground))]">Value-Creation Surplus</dt>
+              <dd className="num font-semibold text-[hsl(var(--accent))]">
+                {fmtCurrency(avBase - m.totalDevCost, { compact: true })} Base /{" "}
+                {fmtCurrency(avStress - m.totalDevCost, { compact: true })} Stress
+              </dd>
+            </div>
+          </dl>
+        </div>
       </div>
 
-      {/* Patient-capital snapshot */}
+      {/* Active-scenario viewer gates ------------------------------------ */}
+      <div>
+        <div className="label-caps mb-3 text-[hsl(var(--muted-foreground))]">
+          Active Scenario View — {active.label}
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <GateTile
+            gateNumber={1}
+            title="Asset Value > Build Cost"
+            rule={`Asset Value ≥ ${fmtCurrency(m.totalDevCost, { compact: true })} Development Cost (Income-Capitalisation)`}
+            verdict={gate1}
+            detail={`Asset Value ${fmtCurrency(active.asset_value ?? 0, { compact: true })} vs Cost ${fmtCurrency(m.totalDevCost, { compact: true })}`}
+          />
+          <GateTile
+            gateNumber={2}
+            title="Patient-Capital IRR & NPV"
+            rule="IRR 8–12% With NPV @ 7% > 0"
+            verdict={gate2}
+            detail={`IRR ${fmtPercent(active.irr12yr ?? 0, 2)} · NPV @ 7% ${fmtCurrency(active.npv7 ?? 0, { compact: true })}`}
+          />
+          <GateTile
+            gateNumber={3}
+            title="Yield-On-Cost Spread ≥ 100 basis points (bps)"
+            rule={`(Development Yield − ${fmtPercent(m.capRate, 2)}) ≥ 100 basis points`}
+            verdict={gate3}
+            detail={`${fmtBps(active.yield_spread ?? 0)} Above Cap Rate`}
+          />
+        </div>
+      </div>
+
+      {/* Patient-capital snapshot table */}
       <PatientCapitalSnapshot active={active} m={m} />
 
-      {/* Defisc upside flag — links to Appendix */}
+      {/* Defisc — figures only, links to Appendix */}
       <button
         onClick={onJumpToAppendix}
         className={cn(
@@ -132,10 +229,29 @@ export function TabVerdict({ active, inputs: m, isModified, onJumpToAppendix }: 
           <Sparkles size={18} />
         </div>
         <div className="flex-1">
-          <div className="label-caps text-[hsl(var(--accent))]">Upside Lever Held In Reserve</div>
-          <div className="mt-1 text-[14px] sm:text-[15px]">
-            Defisc Tax Credit <strong className="num">$4.18M</strong> Lifts Base Development Yield
-            <span className="num"> 11.34% → 12.62%</span>. Not In Base Case — See Appendix.
+          <div className="label-caps text-[hsl(var(--accent))]">
+            Defisc Tax Credit — Held In Reserve
+          </div>
+          <div className="mt-1 grid grid-cols-3 gap-3 text-[13px] sm:text-[14px]">
+            <div>
+              <div className="text-[hsl(var(--muted-foreground))]">Effective Credit</div>
+              <div className="num font-semibold">
+                {fmtCurrency(anchors.defisc_effective, { compact: true })}
+              </div>
+            </div>
+            <div>
+              <div className="text-[hsl(var(--muted-foreground))]">Base Development Yield</div>
+              <div className="num font-semibold">{fmtPercent(devYBase, 2)}</div>
+            </div>
+            <div>
+              <div className="text-[hsl(var(--muted-foreground))]">With Defisc</div>
+              <div className="num font-semibold">
+                {fmtPercent(
+                  (base.noi ?? 0) / Math.max(m.totalDevCost - anchors.defisc_effective, 1),
+                  2
+                )}
+              </div>
+            </div>
           </div>
         </div>
         <ArrowRight
@@ -147,6 +263,82 @@ export function TabVerdict({ active, inputs: m, isModified, onJumpToAppendix }: 
   );
 }
 
+/* ============================================================================
+   Primary KPI Tile — Base + Stress stacked layout (mirrors slide 3)
+   ============================================================================ */
+interface PrimaryKpiTileProps {
+  number: string;
+  title: string;
+  hurdle: string;
+  baseValue: string;
+  baseSub: string;
+  basePass: boolean;
+  stressValue: string;
+  stressSub: string;
+  stressPass: boolean;
+  isModified: boolean;
+}
+
+function PrimaryKpiTile({
+  number,
+  title,
+  hurdle,
+  baseValue,
+  baseSub,
+  basePass,
+  stressValue,
+  stressSub,
+  stressPass,
+  isModified,
+}: PrimaryKpiTileProps) {
+  const bothPass = basePass && stressPass;
+  return (
+    <div className="card-base flex flex-col overflow-hidden p-0">
+      <div className="border-b border-[hsl(var(--border))] p-4 pb-3">
+        <div className="label-caps text-[hsl(var(--muted-foreground))]">Primary KPI {number}</div>
+        <div className="mt-0.5 text-[15px] font-semibold leading-tight">{title}</div>
+        <div className="mt-1 text-[12px] italic text-[hsl(var(--muted-foreground))]">{hurdle}</div>
+      </div>
+
+      <div className="flex-1 space-y-3 p-4">
+        <div>
+          <div className="num text-[26px] font-bold leading-none tracking-tight sm:text-[28px]">
+            {baseValue}
+            <ModDot show={isModified} />
+          </div>
+          <div className="mt-1 text-[12px] text-[hsl(var(--muted-foreground))]">{baseSub}</div>
+        </div>
+        <div className="border-t border-[hsl(var(--border))] pt-3">
+          <div className="num text-[24px] font-bold leading-none tracking-tight sm:text-[26px]">
+            {stressValue}
+            <ModDot show={isModified} />
+          </div>
+          <div className="mt-1 text-[12px] text-[hsl(var(--muted-foreground))]">{stressSub}</div>
+        </div>
+      </div>
+
+      <div
+        className={cn(
+          "flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] font-semibold tracking-wide",
+          bothPass
+            ? "bg-[hsl(var(--accent))]"
+            : basePass || stressPass
+            ? "bg-[hsl(var(--warning))]"
+            : "bg-[hsl(var(--danger))]"
+        )}
+        style={{ color: "hsl(0 0% 100%)" }}
+      >
+        <span>{basePass ? "PASS" : "FAIL"}</span>
+        <span className="opacity-70">/</span>
+        <span>{stressPass ? "PASS" : "FAIL"}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================================
+   Patient-Capital Snapshot
+   ============================================================================ */
 function PatientCapitalSnapshot({ active, m }: { active: ScenarioBundle; m: ModelInputs }) {
   const rows = [
     {
