@@ -1,0 +1,1821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#B3DEF3">
+<title>Vaitape Bora Bora — Feasibility Dashboard</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<style>
+/* ============================================================================
+   ABC THEME TOKENS
+   Extracted from ABC PowerPoint template (theme1.xml)
+============================================================================ */
+:root {
+  /* CORPORATE PALETTE — exact RGB codes */
+  --dk1:        #000000;
+  --lt1:        #FFFFFF;
+
+  /* Primary (saturated — use sparingly for accents only) */
+  --c-turq:     #00A7E1;   /* R0 G167 B225 */
+  --c-blue:     #0055B8;   /* R0 G85 B184 */
+  --c-grey:     #C8C8C8;   /* R200 G200 B200 */
+
+  /* Secondary (saturated) */
+  --c-purple:   #7C7AF7;   /* R124 G122 B247 */
+  --c-green:    #89DC65;   /* R137 G220 B101 */
+  --c-teal:     #1DCAD3;   /* R29  G202 B211 */
+  --c-amber:    #FFA400;   /* R255 G164 B0 */
+  --c-red:      #E74F3D;   /* R231 G79 B61 */
+
+  /* Pastel versions (saturated colour blended with white — ~40% mix) */
+  --p-turq:     #B3DEF3;
+  --p-blue:     #B3CCE5;
+  --p-grey:     #ECECEC;
+  --p-purple:   #D1D0FB;
+  --p-green:    #D7F2CB;
+  --p-teal:     #BCEFF2;
+  --p-amber:    #FFDDA8;
+  --p-red:      #F7CFC9;
+
+  /* Soft tints (very pale — used for fills) */
+  --t-turq:     #E5F4FB;
+  --t-blue:     #E5EBF5;
+  --t-grey:     #F5F5F5;
+  --t-purple:   #ECECFE;
+  --t-green:    #EEFAE5;
+  --t-teal:     #E2F8F9;
+  --t-amber:    #FFF1D6;
+  --t-red:      #FCE6E2;
+
+  /* UI chrome runs on pastels with charcoal text — saturated colours are
+     reserved for hairline strokes and chart accents only. NAVY IS NEVER USED. */
+  --dk2:        #4B5563;          /* warm slate — replaces navy entirely */
+  --lt2:        #E7E6E6;
+  --accent1:    var(--p-turq);    /* pastel by default everywhere */
+  --accent2:    var(--p-purple);
+  --accent3:    var(--p-green);
+  --accent4:    var(--p-amber);
+  --accent5:    var(--p-red);
+  --accent6:    var(--p-teal);    /* was navy — now teal pastel */
+  --brand:       var(--p-turq);
+  --brand-deep:  var(--p-teal);
+  --brand-tint:  var(--t-turq);
+  --dk2-tint:        #EEF0F4;
+  --accent1-tint:    var(--t-turq);
+  --accent3-tint:    var(--t-green);
+  --accent4-tint:    var(--t-amber);
+  --accent5-tint:    var(--t-red);
+  --accent6-tint:    var(--t-teal);
+
+  /* Surfaces */
+  --bg:              #F5F7FA;       /* page background — soft cool */
+  --surface:         #FFFFFF;       /* cards */
+  --surface-soft:    #F8F9FB;
+  --ink:             #1B2333;
+  --body:            #3A4458;
+  --muted:           #6B7280;
+  --faint:           #9CA3AF;
+
+  /* Status colours */
+  --pass:            #2E8540;
+  --pass-soft:       #D8F0DD;
+  --warn:            #B47A00;
+  --warn-soft:       #FFF1D1;
+  --fail:            #C0392B;
+  --fail-soft:       #FCDED9;
+
+  /* Geometry */
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r-md: 16px;
+  --r-lg: 20px;
+  --r-pill: 9999px;
+
+  /* Soft shadows (no borders anywhere) */
+  --shadow-1: 0 1px 2px rgba(15,30,60,0.04), 0 2px 8px rgba(15,30,60,0.05);
+  --shadow-2: 0 2px 4px rgba(15,30,60,0.05), 0 8px 24px rgba(15,30,60,0.08);
+  --shadow-3: 0 4px 12px rgba(15,30,60,0.10), 0 24px 48px rgba(15,30,60,0.12);
+  --shadow-hero: 0 8px 24px rgba(0, 167, 225, 0.14);
+
+  /* Typography scale — moderate sizes, not oversized.
+     Hero h1 reduced from 32-48 to 28-40. KPI value uniform at one size. */
+  --fs-hero:   clamp(28px, 3.4vw, 40px);
+  --fs-h1:     clamp(26px, 3vw, 36px);
+  --fs-h2:     clamp(20px, 2.1vw, 28px);
+  --fs-h3:     clamp(16px, 1.4vw, 19px);
+  --fs-body:   clamp(14px, 0.95vw, 15.5px);
+  --fs-small:  clamp(12px, 0.85vw, 13.5px);
+  --fs-kpi:    clamp(28px, 2.8vw, 34px);  /* uniform KPI size — used for ALL key figures */
+  --fs-kpi-sm: clamp(28px, 2.8vw, 34px);  /* same as fs-kpi for uniform sizing */
+}
+
+/* ============================================================================
+   RESET + BASE
+============================================================================ */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  color: var(--body);
+  background: var(--bg);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding-bottom: 96px; /* room for floating button */
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Lato', sans-serif;
+  font-weight: 900;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0;
+}
+
+button { font-family: inherit; cursor: pointer; border: none; }
+
+/* ============================================================================
+   HERO HEADER — ABC navy band
+============================================================================ */
+.hero {
+  position: relative;
+  overflow: hidden;
+  color: white;
+  padding: clamp(48px, 7vw, 96px) clamp(20px, 4vw, 64px) clamp(48px, 6vw, 80px);
+  background-image: url('hero.jpg');
+  background-size: cover;
+  background-position: center 60%;
+  background-repeat: no-repeat;
+  min-height: 480px;
+}
+/* flat translucent overlay (no gradient) for legibility — lighter, warmer tone */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(40, 55, 70, 0.38);
+  pointer-events: none;
+}
+.hero > * { position: relative; z-index: 1; }
+.hero-eyebrow {
+  font-size: var(--fs-small);
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+  margin-bottom: 14px;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
+}
+.hero h1 {
+  color: white;
+  font-size: var(--fs-h1);
+  margin-bottom: 14px;
+  max-width: 900px;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.40);
+}
+.hero-sub {
+  font-size: var(--fs-h3);
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.92);
+  max-width: 720px;
+  margin-bottom: 24px;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
+}
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+.hero-chip {
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 8px 16px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-small);
+  font-weight: 700;
+  color: white;
+}
+.hero-chip strong { color: #FFFFFF; font-weight: 900; margin-right: 6px; }
+
+/* ============================================================================
+   SCENARIO SWITCHER
+============================================================================ */
+.scenario-bar {
+  background: var(--surface);
+  margin: -32px clamp(20px, 4vw, 64px) 32px;
+  padding: 20px 24px;
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  position: relative;
+  z-index: 5;
+}
+.scenario-label {
+  font-size: var(--fs-small);
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.scenario-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+}
+.scenario-btn {
+  padding: 10px 18px;
+  border-radius: var(--r-pill);
+  background: var(--surface-soft);
+  color: var(--body);
+  font-weight: 700;
+  font-size: var(--fs-small);
+  transition: all 0.2s;
+}
+.scenario-btn {
+  padding: 12px 20px;
+  border-radius: var(--r-pill);
+  background: var(--surface-soft);
+  color: var(--body);
+  font-weight: 700;
+  font-size: var(--fs-small);
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  cursor: pointer;
+}
+.scenario-btn-label {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+.scenario-btn-sub {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.scenario-btn:hover { background: var(--accent1-tint); color: var(--ink); }
+.scenario-btn:hover .scenario-btn-sub { color: var(--ink); opacity: 0.85; }
+.scenario-btn.active {
+  background: var(--p-turq);
+  color: var(--ink);
+  box-shadow: 0 2px 8px rgba(0, 167, 225, 0.18);
+}
+.scenario-btn.active .scenario-btn-sub { color: var(--ink); opacity: 0.8; }
+.scenario-hint {
+  font-size: 12px;
+  color: var(--muted);
+  flex-basis: 100%;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* ============================================================================
+   SCENARIO SUMMARY — always-visible institutional comparison panel
+============================================================================ */
+.scenario-summary-section { margin-top: 8px; }
+.scenario-summary {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+}
+.sum-head, .sum-row {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1.1fr 1fr 1fr 0.7fr;
+  align-items: center;
+  gap: 0;
+}
+.sum-head {
+  background: var(--p-turq-soft, #E6F7FD);
+  padding: 12px 20px;
+}
+.sum-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.sum-row {
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+.sum-row + .sum-row { box-shadow: inset 0 1px 0 var(--surface-soft); }
+.sum-row:hover { background: var(--surface-soft); }
+.sum-row.active {
+  background: var(--accent1-tint, #DDF7FF);
+}
+.sum-row.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--p-turq);
+}
+.sum-row.untouched .sum-num { color: var(--muted); }
+.sum-cell { padding: 0 12px; }
+.sum-cell:first-child { padding-left: 0; }
+.sum-cell:last-child  { padding-right: 0; }
+.sum-name-label {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+}
+.sum-name-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+  font-weight: 500;
+}
+.sum-num {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.sum-tag {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--muted);
+  font-weight: 700;
+  margin-top: 4px;
+}
+.sum-delta {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  font-variant-numeric: tabular-nums;
+}
+.sum-delta.up      { background: var(--accent3-tint, #DFF5E1); color: #1F6B3A; }
+.sum-delta.down    { background: var(--accent2-tint, #FCE3DC); color: #8B2E1F; }
+.sum-delta.neutral { background: var(--surface-soft); color: var(--muted); }
+
+/* ============================================================================
+   WHAT CHANGED — chip strip on Custom tab
+============================================================================ */
+.what-changed {
+  margin: -8px clamp(20px, 4vw, 64px) 24px;
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-2);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.chg-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.chg-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--accent1-tint, #DDF7FF);
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+}
+.chg-status {
+  font-size: 13px;
+  color: var(--body);
+  font-weight: 500;
+  flex: 1;
+}
+.chg-reset {
+  background: var(--surface-soft);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.chg-reset:hover { background: var(--p-turq); color: var(--ink); }
+.chg-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--accent1-tint, #DDF7FF);
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.chg-chip-label { font-weight: 700; }
+.chg-chip-from  { color: var(--muted); text-decoration: line-through; }
+.chg-chip-arrow { color: var(--muted); }
+.chg-chip-to    { font-weight: 800; color: var(--ink); }
+
+/* ============================================================================
+   DRAWER BANNER — read-only notice on Base/Stress
+============================================================================ */
+.drawer-banner {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--accent4-tint, #FFF4D6);
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.drawer-banner-icon { font-size: 18px; }
+.drawer-banner-text {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  min-width: 200px;
+}
+.drawer-banner-cta {
+  background: var(--p-turq);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+}
+.drawer-banner-cta:hover { filter: brightness(0.95); }
+
+/* Read-only inputs on Base/Stress */
+.input-row input[readonly] {
+  background: var(--surface-soft);
+  color: var(--muted);
+  cursor: default;
+}
+
+/* ============================================================================
+   LAYOUT
+============================================================================ */
+main {
+  padding: 0 clamp(20px, 4vw, 64px);
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+section {
+  margin-bottom: clamp(32px, 4vw, 56px);
+}
+
+.section-head {
+  margin-bottom: 24px;
+}
+.section-eyebrow {
+  font-size: var(--fs-small);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.section-head h2 {
+  font-size: var(--fs-h2);
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.section-head p {
+  font-size: var(--fs-body);
+  color: var(--muted);
+  max-width: 800px;
+  margin: 0;
+}
+
+/* ============================================================================
+   HERO KPI GRID — the big numbers
+============================================================================ */
+.kpi-grid {
+  display: grid;
+  /* 3-up at wide — each card has ~430px so dual-case values fit comfortably.
+     Auto-fits to 2-up and 1-up at narrower widths. */
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 20px;
+}
+.kpi-card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: 28px 28px 24px;
+  box-shadow: var(--shadow-2);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-3);
+}
+/* All KPI numbers render at one uniform size in charcoal ink.
+   Status is communicated solely via the small pill chip below. */
+.kpi-card .kpi-label {
+  font-size: var(--fs-small);
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* Dual-case Base / Stress side-by-side */
+.kpi-card .kpi-dual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin-bottom: 12px;
+}
+.kpi-card .kpi-dual-col {
+  padding-right: 12px;
+}
+.kpi-card .kpi-dual-col.stress {
+  padding-right: 0;
+  padding-left: 14px;
+  border-left: 0;
+  position: relative;
+}
+.kpi-card .kpi-dual-col.stress::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 4px; bottom: 4px;
+  width: 1px;
+  background: rgba(0,0,0,0.08);
+}
+.kpi-card .kpi-dual-tag {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.kpi-card .kpi-dual-col.stress .kpi-dual-tag {
+  color: var(--warn);
+}
+/* In dual-case mode each cell only has half a card — use the slightly smaller
+   --fs-kpi-sm so figures like "USD 73.3M" never clip. Both columns share the
+   same font-size for uniform sizing across the strip. */
+.kpi-card .kpi-value {
+  font-size: clamp(20px, 2.05vw, 26px);
+  font-weight: 900;
+  color: var(--ink);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: visible;
+}
+.kpi-card .kpi-sub {
+  font-size: var(--fs-small);
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.kpi-status {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-small);
+  font-weight: 700;
+  margin-top: 4px;
+}
+.kpi-status.pass { background: var(--pass-soft); color: var(--pass); }
+.kpi-status.warn { background: var(--warn-soft); color: var(--warn); }
+.kpi-status.fail { background: var(--fail-soft); color: var(--fail); }
+
+/* ============================================================================
+   KPMG INDEPENDENCE CALLOUT
+============================================================================ */
+.callout {
+  margin-top: 28px;
+  padding: 24px clamp(20px, 3vw, 32px);
+  background: var(--p-amber);
+  border-radius: var(--r-lg);
+  color: var(--ink);
+  box-shadow: var(--shadow-2);
+}
+.callout-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: rgba(0,0,0,0.08);
+  color: var(--ink);
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  margin-bottom: 10px;
+}
+.callout h3 {
+  font-size: clamp(18px, 2vw, 22px);
+  font-weight: 900;
+  margin: 0 0 8px 0;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.callout p {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+  margin: 0;
+  max-width: 90ch;
+}
+.callout p em { font-style: normal; font-weight: 800; }
+
+/* ============================================================================
+   NPV-AT-THREE-RATES PANEL
+============================================================================ */
+.npv-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr 1fr 1fr;
+  gap: 1px;
+  background: rgba(0,0,0,0.06);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.npv-h, .npv-rate, .npv-label, .npv-val {
+  background: var(--surface);
+  padding: 14px 16px;
+  font-size: 14px;
+  color: var(--ink);
+}
+.npv-h {
+  background: var(--p-turq);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--ink);
+}
+.npv-rate {
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--ink);
+  background: var(--p-grey);
+}
+.npv-label {
+  font-weight: 600;
+  color: var(--body);
+  font-size: 13px;
+}
+.npv-val {
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  font-size: 17px;
+  text-align: right;
+}
+.npv-val.pass { background: var(--pass-soft); color: var(--pass); }
+.npv-val.warn { background: var(--warn-soft); color: var(--warn); }
+.npv-val.fail { background: var(--fail-soft); color: var(--fail); }
+.npv-foot {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+@media (max-width: 700px) {
+  .npv-grid { grid-template-columns: 70px 1fr 1fr; }
+  .npv-h, .npv-rate, .npv-label, .npv-val { padding: 10px 10px; font-size: 12px; }
+  /* Hide both investor-lens header and its data cells (positions 2, 6, 10, 14) */
+  .npv-h:nth-child(2),
+  .npv-grid > :nth-child(6),
+  .npv-grid > :nth-child(10),
+  .npv-grid > :nth-child(14) { display: none; }
+  .npv-rate { font-size: 14px; padding: 10px 10px; }
+  .npv-val { font-size: 14px; }
+}
+
+/* ============================================================================
+   CARDS & PANELS
+============================================================================ */
+.card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: clamp(20px, 3vw, 36px);
+  box-shadow: var(--shadow-2);
+}
+.card-head {
+  margin-bottom: 24px;
+}
+.card-head h3 {
+  font-size: var(--fs-h3);
+  color: var(--ink);
+  margin-bottom: 6px;
+  font-weight: 900;
+}
+.card-head .sub {
+  font-size: var(--fs-small);
+  color: var(--muted);
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+@media (max-width: 1024px) {
+  .two-col { grid-template-columns: 1fr; }
+}
+
+/* ============================================================================
+   CHARTS
+============================================================================ */
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  height: 360px;
+  margin-top: 8px;
+}
+.chart-wrap.tall { height: 440px; }
+.chart-wrap.short { height: 280px; }
+
+/* ============================================================================
+   TABLES
+============================================================================ */
+.tbl-wrap {
+  overflow-x: auto;
+  border-radius: var(--r-md);
+  -webkit-overflow-scrolling: touch;
+}
+table.data {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--fs-body);
+  font-variant-numeric: tabular-nums;
+  background: var(--surface);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+table.data thead th {
+  background: var(--p-turq);
+  color: var(--ink);
+  font-weight: 900;
+  text-align: left;
+  padding: 14px 20px;
+  font-size: var(--fs-small);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+table.data thead th:first-child { padding-left: 24px; }
+table.data thead th:last-child  { padding-right: 24px; }
+table.data tbody td {
+  padding: 16px 20px;
+  background: var(--surface);
+}
+table.data tbody td:first-child { padding-left: 24px; }
+table.data tbody td:last-child  { padding-right: 24px; }
+table.data tbody tr:nth-child(even) td { background: var(--surface-soft); }
+table.data td.num { text-align: right; font-weight: 700; color: var(--ink); }
+table.data td.label { color: var(--body); }
+table.data tr.section-row td {
+  background: var(--dk2-tint) !important;
+  color: var(--dk2);
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: var(--fs-small);
+  letter-spacing: 0.08em;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+table.data tr.subtotal-row td {
+  background: var(--accent1-tint) !important;
+  color: var(--ink);
+  font-weight: 900;
+}
+table.data tr.total-row td {
+  background: var(--p-turq) !important;
+  color: var(--ink);
+  font-weight: 900;
+  font-size: calc(var(--fs-body) * 1.02);
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+table.data tr.indent td:first-child { padding-left: 44px; color: var(--muted); }
+
+/* ============================================================================
+   SENSITIVITY HEATMAP
+============================================================================ */
+.heatmap {
+  display: grid;
+  grid-template-columns: 180px repeat(5, 1fr);
+  gap: 6px;
+  background: var(--surface-soft);
+  padding: 16px;
+  border-radius: var(--r-md);
+}
+.heatmap .hcell {
+  padding: 18px 14px;
+  border-radius: var(--r-sm);
+  text-align: center;
+  font-weight: 700;
+  font-size: var(--fs-body);
+}
+.heatmap .hhead {
+  background: var(--dk2-tint);
+  color: var(--ink);
+  font-size: var(--fs-small);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 10px;
+  font-weight: 900;
+}
+.heatmap .hlabel {
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  padding-left: 18px;
+  box-shadow: var(--shadow-1);
+}
+.heatmap .hlabel small {
+  display: block;
+  font-weight: 400;
+  color: var(--muted);
+  font-size: var(--fs-small);
+  margin-top: 2px;
+}
+.heatmap .hpass {
+  background: var(--accent3-tint);
+  color: var(--pass);
+}
+.heatmap .hwarn {
+  background: var(--accent4-tint);
+  color: var(--warn);
+}
+.heatmap .hfail {
+  background: var(--accent5-tint);
+  color: var(--fail);
+}
+.heatmap .hbase {
+  box-shadow: inset 0 0 0 2px var(--c-turq);
+  position: relative;
+}
+.heatmap .hbase::after {
+  content: "BASE";
+  position: absolute;
+  top: 4px; right: 6px;
+  font-size: 9px;
+  font-weight: 900;
+  background: var(--p-turq);
+  color: var(--ink);
+  padding: 2px 6px;
+  border-radius: var(--r-pill);
+  letter-spacing: 0.05em;
+}
+.heatmap .hcell .yld {
+  display: block;
+  font-size: var(--fs-small);
+  font-weight: 400;
+  margin-top: 2px;
+  opacity: 0.85;
+}
+/* Tighter cells for the 7-row Discount × Cap heatmap (same column count) */
+.heatmap-7 .hcell {
+  padding: 12px 10px;
+  font-size: 13px;
+}
+.heatmap-7 .hhead {
+  padding: 10px 8px;
+}
+.heatmap-7 .hlabel {
+  padding-left: 14px;
+}
+
+/* ============================================================================
+   HOLD-PERIOD COMPARISON
+============================================================================ */
+.hold-table {
+  width: 100%;
+}
+.hold-table thead th {
+  text-align: center;
+  background: var(--dk2-tint);
+  color: var(--ink);
+  font-size: var(--fs-small);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 14px 10px;
+  font-weight: 900;
+}
+.hold-table thead th:first-child {
+  text-align: left;
+  padding-left: 16px;
+}
+.hold-table tbody td {
+  text-align: center;
+  padding: 16px 10px;
+  font-size: var(--fs-body);
+  font-weight: 700;
+  border-radius: var(--r-sm);
+}
+.hold-table tbody td:first-child {
+  text-align: left;
+  padding-left: 16px;
+  background: var(--surface);
+  font-weight: 600;
+  color: var(--body);
+}
+.hold-table tbody td.hpass { background: var(--accent3-tint); color: var(--pass); }
+.hold-table tbody td.hwarn { background: var(--accent4-tint); color: var(--warn); }
+.hold-table tbody td.hfail { background: var(--accent5-tint); color: var(--fail); }
+.hold-foot {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: var(--fs-body);
+  color: var(--body);
+  line-height: 1.5;
+}
+.hold-foot .foot-mark {
+  display: inline-block;
+  background: var(--accent3-tint);
+  color: var(--pass);
+  padding: 2px 10px;
+  border-radius: var(--r-pill);
+  font-weight: 900;
+  font-size: var(--fs-small);
+  letter-spacing: 0.03em;
+}
+.hold-foot .foot-note {
+  background: var(--surface-soft);
+  padding: 12px 16px;
+  border-radius: var(--r-md);
+  font-size: var(--fs-small);
+  color: var(--body);
+}
+.hold-foot .foot-note strong { color: var(--ink); }
+
+/* ============================================================================
+   COHERENCE CHECKS
+============================================================================ */
+.coherence-row {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  align-items: start;
+  gap: 16px;
+  padding: 20px 24px;
+  background: var(--surface-soft);
+  border-radius: var(--r-md);
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-1);
+}
+.coherence-num {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--p-turq);
+  color: var(--ink);
+  font-weight: 900;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.coherence-text {
+  font-size: var(--fs-body);
+  color: var(--body);
+}
+.coherence-text strong {
+  color: var(--ink);
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 900;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  font-weight: 700;
+  font-size: var(--fs-small);
+  white-space: nowrap;
+}
+.badge-pass { background: var(--pass-soft); color: var(--pass); }
+.badge-fail { background: var(--fail-soft); color: var(--fail); }
+
+.verdict-bar {
+  margin-top: 16px;
+  padding: 18px 24px;
+  border-radius: var(--r-lg);
+  background: var(--p-turq);
+  color: var(--ink);
+  font-size: var(--fs-body);
+  font-weight: 700;
+  box-shadow: var(--shadow-1);
+}
+
+/* ============================================================================
+   SPACE PROGRAMME BARS
+============================================================================ */
+.bar-zone {
+  font-size: var(--fs-small);
+  font-weight: 900;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 20px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+}
+.bar-row {
+  display: grid;
+  grid-template-columns: 280px 1fr 100px 32px;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+  font-size: var(--fs-body);
+}
+.bar-label { color: var(--body); }
+.bar-track {
+  height: 14px;
+  background: var(--surface-soft);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  background: var(--p-turq);
+  border-radius: var(--r-pill);
+  transition: width 0.4s ease-out;
+}
+.bar-num {
+  text-align: right;
+  font-weight: 900;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 768px) {
+  .bar-row { grid-template-columns: 1fr 80px 32px; }
+  .bar-row .bar-track { display: none; }
+}
+
+/* Heatmap horizontal-scroll wrapper — used on mobile when grid is wider than viewport.
+   min-width:0 prevents grid/flex children from blowing out their parent container. */
+.hm-wrap {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.hm-wrap > .heatmap { min-width: 100%; }
+/* Cards inside grids must allow their inner content to be clipped/scrolled
+   instead of forcing the column wider than the viewport on mobile. */
+.two-col > .card { min-width: 0; }
+
+/* Mobile: tighter heatmap + hold-table; horizontal scroll inside .hm-wrap if needed */
+@media (max-width: 760px) {
+  .hm-wrap > .heatmap {
+    min-width: 480px;
+    grid-template-columns: 92px repeat(5, minmax(70px, 1fr));
+    gap: 4px;
+    padding: 10px;
+  }
+  .heatmap .hcell {
+    padding: 10px 6px;
+    font-size: 11px;
+  }
+  .heatmap .hhead {
+    padding: 8px 4px;
+    font-size: 10px;
+  }
+  .heatmap .hlabel {
+    padding-left: 8px;
+    font-size: 11px;
+  }
+  .heatmap .hlabel small { font-size: 9px; }
+  .heatmap .hbase::after {
+    font-size: 7px;
+    padding: 1px 4px;
+    top: 2px; right: 3px;
+  }
+  .heatmap-7 .hcell { padding: 7px 4px; font-size: 10px; }
+  .heatmap-7 .hhead { font-size: 9px; padding: 6px 3px; }
+
+  .hold-table thead th { padding: 10px 6px; font-size: 10px; }
+  .hold-table thead th:first-child { padding-left: 10px; }
+  .hold-table tbody td { padding: 12px 6px; font-size: 13px; }
+  .hold-table tbody td:first-child { padding-left: 10px; font-size: 12px; }
+  .hold-foot { font-size: 13px; }
+  .hold-foot .foot-note { padding: 10px 12px; font-size: 12px; }
+
+  /* ---- Scenario tab strip: stack as full-width pills ---- */
+  .scenario-bar {
+    margin: -32px 16px 24px;
+    padding: 16px;
+    gap: 10px;
+  }
+  .scenario-buttons {
+    flex-direction: column;
+    width: 100%;
+    gap: 6px;
+  }
+  .scenario-btn {
+    width: 100%;
+    padding: 12px 16px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .scenario-btn-label { font-size: 13px; }
+  .scenario-btn-sub { font-size: 11px; }
+  .scenario-hint { font-size: 11px; }
+
+  /* ---- Scenario summary: card-stacked layout ---- */
+  .scenario-summary-section {
+    margin: 0 16px 16px;
+  }
+  .sum-head { display: none; }
+  .sum-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 12px;
+    padding: 16px;
+    align-items: start;
+  }
+  .sum-row + .sum-row {
+    box-shadow: inset 0 1px 0 var(--surface-soft);
+  }
+  .sum-cell {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  /* Name cell spans both columns at top */
+  .sum-cell:first-child {
+    grid-column: 1 / -1;
+    border-bottom: 1px solid var(--surface-soft);
+    padding-bottom: 10px;
+    margin-bottom: 4px;
+  }
+  /* Add inline labels for each metric on mobile */
+  .sum-cell[data-label]::before {
+    content: attr(data-label);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+  .sum-num { font-size: 18px; }
+  .sum-name-label { font-size: 15px; }
+  .sum-name-sub { font-size: 11px; }
+  .sum-tag { font-size: 9px; }
+  .sum-delta { font-size: 11px; padding: 2px 7px; }
+  .sum-row.active::before {
+    top: 12px;
+    bottom: 12px;
+  }
+
+  /* ---- What Changed strip ---- */
+  .what-changed {
+    margin: 0 16px 20px;
+    padding: 14px 16px;
+  }
+  .chg-head {
+    gap: 10px;
+  }
+  .chg-eyebrow { font-size: 10px; }
+  .chg-status { font-size: 12px; flex-basis: 100%; flex: 1 1 100%; }
+  .chg-reset { font-size: 11px; padding: 7px 12px; }
+  .chg-chip { font-size: 11px; padding: 5px 10px; }
+
+  /* ---- Drawer banner ---- */
+  .drawer-banner {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .drawer-banner-icon { font-size: 16px; }
+  .drawer-banner-text { font-size: 12px; min-width: 0; flex: 1 1 100%; }
+  .drawer-banner-cta { font-size: 11px; padding: 7px 12px; }
+}
+
+/* ============================================================================
+   INFO TOOLTIP — fixed: large enough, never cut off
+============================================================================ */
+.info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--p-turq);
+  color: var(--ink);
+  font-weight: 900;
+  font-size: 12px;
+  font-style: normal;
+  font-family: 'Lato', sans-serif;
+  cursor: help;
+  position: relative;
+  flex-shrink: 0;
+  user-select: none;
+  transition: background 0.15s, transform 0.15s;
+  line-height: 1;
+}
+.info:hover { background: var(--c-turq); color: white; transform: scale(1.1); }
+.info::before { content: "ⓘ"; font-size: 13px; font-weight: 900; }
+
+.tip {
+  visibility: hidden;
+  opacity: 0;
+  position: fixed;
+  z-index: 200;
+  background: var(--ink);
+  color: white;
+  padding: 14px 18px;
+  border-radius: var(--r-md);
+  font-size: var(--fs-small);
+  font-weight: 400;
+  line-height: 1.5;
+  width: min(360px, calc(100vw - 32px));
+  box-shadow: var(--shadow-3);
+  transition: opacity 0.2s, visibility 0.2s;
+  pointer-events: none;
+  font-family: 'Lato', sans-serif;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.tip.show { visibility: visible; opacity: 1; }
+.tip-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--r-pill);
+  background: var(--p-turq);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+.tip-tag.computed     { background: var(--p-turq);   color: var(--ink); }
+.tip-tag.benchmarked  { background: var(--p-green);  color: var(--ink); }
+.tip-tag.retrieved    { background: var(--p-amber);  color: var(--ink); }
+.tip-tag.scenario     { background: var(--p-purple); color: var(--ink); }
+.tip-tag.reference    { background: var(--p-grey);   color: var(--ink); }
+
+/* ============================================================================
+   FLOATING ACTION BUTTON + INPUT DRAWER
+============================================================================ */
+.fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 100;
+  background: var(--p-turq);
+  color: var(--ink);
+  height: 56px;
+  padding: 0 24px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-small);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 20px rgba(0, 167, 225, 0.20), 0 2px 6px rgba(0, 167, 225, 0.10);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.fab:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0, 167, 225, 0.28), 0 4px 10px rgba(0, 167, 225, 0.16); }
+.fab:active { transform: translateY(0); }
+.fab svg { width: 20px; height: 20px; }
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.50);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 110;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
+}
+.scrim.open { opacity: 1; visibility: visible; }
+
+.drawer {
+  position: fixed;
+  top: 0; right: 0;
+  height: 100dvh;
+  width: min(480px, 100%);
+  background: var(--surface);
+  z-index: 120;
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -16px 0 48px rgba(15, 30, 60, 0.20);
+  border-radius: var(--r-lg) 0 0 var(--r-lg);
+}
+.drawer.open { transform: translateX(0); }
+
+.drawer-head {
+  background: var(--p-turq);
+  color: var(--ink);
+  padding: 22px 26px;
+  border-radius: var(--r-lg) 0 0 0;
+}
+.drawer-head h3 {
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 900;
+  margin-bottom: 4px;
+}
+.drawer-head p {
+  font-size: var(--fs-small);
+  color: var(--body);
+  opacity: 0.92;
+  margin: 0;
+}
+.drawer-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  width: 32px; height: 32px;
+  background: rgba(255,255,255,0.55);
+  color: var(--ink);
+  border-radius: 50%;
+  font-size: 20px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.drawer-close:hover { background: rgba(255,255,255,0.85); }
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 28px;
+  -webkit-overflow-scrolling: touch;
+}
+.drawer-foot {
+  padding: 16px 28px env(safe-area-inset-bottom, 16px);
+  background: var(--surface-soft);
+  display: flex;
+  gap: 12px;
+  border-radius: 0 0 0 var(--r-lg);
+}
+.drawer-foot button {
+  flex: 1;
+  padding: 14px 20px;
+  border-radius: var(--r-md);
+  font-weight: 900;
+  font-size: var(--fs-body);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: all 0.15s;
+}
+.btn-primary {
+  background: var(--p-turq);
+  color: var(--ink);
+  box-shadow: 0 4px 12px rgba(0, 167, 225, 0.18);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0, 167, 225, 0.28); }
+.btn-secondary { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-1); }
+.btn-secondary:hover { background: var(--accent1-tint); }
+
+.input-group {
+  margin-bottom: 22px;
+}
+.input-group-label {
+  font-size: var(--fs-small);
+  font-weight: 900;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  margin-bottom: 10px;
+  padding: 6px 12px;
+  background: var(--accent1-tint);
+  border-radius: var(--r-pill);
+  display: inline-block;
+}
+.input-row {
+  display: grid;
+  grid-template-columns: 1fr 110px 28px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+.input-row label {
+  font-size: var(--fs-small);
+  color: var(--body);
+  font-weight: 700;
+  line-height: 1.3;
+}
+.input-row input {
+  width: 100%;
+  padding: 10px 12px;
+  font-family: 'Lato', sans-serif;
+  font-size: var(--fs-body);
+  font-weight: 900;
+  color: var(--ink);
+  background: var(--surface-soft);
+  border-radius: var(--r-sm);
+  border: none;
+  box-shadow: inset 0 0 0 2px transparent;
+  transition: all 0.15s;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+}
+.input-row input:focus {
+  outline: none;
+  background: white;
+  box-shadow: inset 0 0 0 2px var(--accent1);
+}
+.input-row input.changed {
+  background: var(--accent4-tint);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--accent4);
+}
+.input-row input::-webkit-outer-spin-button,
+.input-row input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.live-summary {
+  margin-top: 8px;
+  padding: 16px 18px;
+  background: var(--t-turq);
+  border-radius: var(--r-md);
+  color: var(--ink);
+}
+.live-summary-title {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.live-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+}
+.live-summary-grid > div { display: flex; flex-direction: column; }
+.live-summary-grid label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.live-summary-grid strong {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* mobile drawer = full screen */
+@media (max-width: 600px) {
+  .drawer { width: 100%; border-radius: 0; }
+  .drawer-head, .drawer-foot { border-radius: 0; }
+  .fab { padding: 0 22px; height: 58px; font-size: 14px; bottom: 16px; right: 16px; }
+}
+
+/* ============================================================================
+   PRINT
+============================================================================ */
+@media print {
+  .fab, .scrim, .drawer, .scenario-bar { display: none !important; }
+  body { background: white; padding: 0; }
+  .hero { background: var(--p-turq); }
+  .card, .kpi-card { box-shadow: none; break-inside: avoid; }
+}
+
+/* ============================================================================
+   UTILITY
+============================================================================ */
+.muted { color: var(--muted); }
+.row-flex { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.spacer { flex: 1; }
+
+</style>
+</head>
+<body>
+
+<!-- ========================================================================
+     HERO HEADER
+======================================================================== -->
+<header class="hero">
+  <div class="hero-eyebrow">Bora Bora Net-Zero Luxury Masterplan · Section 6 · v3 Patient-Capital</div>
+  <h1>Vaitape Ultra-Luxury Hotel: Feasibility Dashboard</h1>
+  <p class="hero-sub">Bankable with stress headroom for patient capital. Base IRR <strong>12.6%</strong> · Stress IRR <strong>8.9%</strong> at 12-yr hold — both clear the 8% institutional floor. The 12-yr hold is one of five tested (5 / 8 / 10 / 12 / 20-yr); shorter holds peak IRR at <strong>15%</strong> on a peak-ramp exit, longer holds compound to a <strong>5.3×</strong> equity multiple over twenty years.</p>
+  <div class="hero-meta">
+    <span class="hero-chip"><strong>35</strong> Keys</span>
+    <span class="hero-chip"><strong>USD 42M</strong> Dev Cost</span>
+    <span class="hero-chip"><strong>1.5 ha</strong> Site</span>
+    <span class="hero-chip"><strong>5 Holds</strong> Tested (5/8/10/12/20-yr)</span>
+    <span class="hero-chip"><strong>April 2026</strong> Pre-Concept Stage</span>
+  </div>
+</header>
+
+<!-- ========================================================================
+     SCENARIO TABS — Base · Stress · Custom
+======================================================================== -->
+<div class="scenario-bar" id="scenarioBar">
+  <span class="scenario-label">Active Scenario</span>
+  <div class="scenario-buttons" id="scenarioButtons"></div>
+  <span class="scenario-hint">Click a tab to switch the live dashboard. The summary table below always shows all three.</span>
+</div>
+
+<main>
+
+<!-- ========================================================================
+     SCENARIO SUMMARY — institutional comparison panel (always visible)
+======================================================================== -->
+<section class="scenario-summary-section">
+  <div class="section-head">
+    <div class="section-eyebrow">Scenario Summary</div>
+    <h2>Three Scenarios at a Glance</h2>
+    <p>Base Case is the institutional reference. Stress Case applies a combined ADR −15% / Occupancy −10pp shock. Custom is your editable sandbox — it inherits Base on first load, persists across sessions, and feeds the dashboard below when selected. Every cell shows the scenario’s own value plus its delta versus Base.</p>
+  </div>
+  <div class="scenario-summary" id="scenarioSummary"></div>
+</section>
+
+<!-- What changed strip — only visible on Custom tab -->
+<div class="what-changed" id="whatChanged" style="display:none;"></div>
+
+<!-- ========================================================================
+     SECTION 1 — HEADLINE KPIs
+======================================================================== -->
+<section>
+  <div class="section-head">
+    <div class="section-eyebrow">Headline Metrics</div>
+    <h2>The Numbers That Matter</h2>
+    <p>Six metrics define the deal. Each card carries a status badge — within target, within band, or below threshold.</p>
+  </div>
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <!-- KPMG independence callout — visible methodology framing -->
+  <div class="callout">
+    <div class="callout-tag">Independence · RICS Red Book</div>
+    <h3>TRevPAR Premium: 35% Conservative, KPMG-Adjacent Sources Excluded</h3>
+    <p>The base TRevPAR premium of <strong>35%</strong> is anchored to <strong>STR Global</strong> and <strong>HVS</strong> independent benchmark data. KPMG’s <strong>65%</strong> figure — produced through Polynesia Consulting in collaboration with Henry Terou — is excluded from the headline IRR engine to avoid <em>circular validation</em>: the same advisor cannot both originate and verify a feasibility input. RICS Red Book independence rules require this firewall. The KPMG figure is preserved as a sensitivity reference, not a base assumption.</p>
+  </div>
+</section>
+
+<!-- ========================================================================
+     SECTION 2 — IRR BY SCENARIO + 12-YR CASH FLOW + NPV PANEL
+======================================================================== -->
+<section>
+  <div class="section-head">
+    <div class="section-eyebrow">Returns Analysis</div>
+    <h2>IRR, Cumulative Cash Flow &amp; NPV at Three Discount Rates</h2>
+    <p>12-year unleveraged IRR across all five scenarios, with the 8–12% target band shaded. Cumulative cash flow shows the breakeven crossover. NPV is shown at three investor lenses — patient capital (7%), institutional (9%), and private equity (11%).</p>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-head">
+        <h3>Indicative IRR by Scenario</h3>
+        <div class="sub">12-year patient-capital hold. Target band: 8–12% (Horwath HTL APAC).</div>
+      </div>
+      <div class="chart-wrap"><canvas id="irrChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <h3>Cumulative Cash Flow (Years 0–12)</h3>
+        <div class="sub">Construction outflows phased Y0–Y2 (30/40/30%); ramp Y3 50% · Y4 72% · Y5 90% · Y6+ 100%; Gordon terminal at Y12.</div>
+      </div>
+      <div class="chart-wrap"><canvas id="cashflowChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:24px;">
+    <div class="card-head">
+      <h3>NPV at Three Discount Rates — Patient-Capital DCF</h3>
+      <div class="sub">Each row is a different investor lens. Green = comfortably positive (≥ USD 5M). Amber = marginal positive. Red = negative.</div>
+    </div>
+    <div id="npvPanel"></div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     SECTION 2B — HOLD-PERIOD COMPARISON
+======================================================================== -->
+<section>
+  <div class="section-head">
+    <div class="section-eyebrow">Hold-Period Sensitivity</div>
+    <h2>Five Tested Holds: 5 / 8 / 10 / 12 / 20-Year</h2>
+    <p>Same operating cash flows, different exit years. Shorter holds maximise IRR by exiting at peak ramp before any renovation hits; longer holds maximise the equity multiple by compounding NOI growth across more years. The 12-yr patient-capital default sits between these two ends. Toggle Renovation Cycle in the drawer (off / 7 / 8 / 9 / 10) to test capex timing.</p>
+  </div>
+  <div class="card">
+    <div class="tbl-wrap" id="holdScan"></div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     SECTION 3 — REVENUE WATERFALL + GFA DOUGHNUT
+======================================================================== -->
+<section>
+  <div class="section-head">
+    <div class="section-eyebrow">Revenue &amp; Operations</div>
+    <h2>Revenue Waterfall &amp; Gross Floor Area Allocation</h2>
+    <p>How total revenue flows down to NOI. Where the GFA goes by zone.</p>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-head">
+        <h3>Revenue → NOI Waterfall (Base Case)</h3>
+        <div class="sub">From total annualised revenue down to net operating income.</div>
+      </div>
+      <div class="chart-wrap"><canvas id="waterfallChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <h3>GFA Allocation by Zone</h3>
+        <div class="sub">6,720 sqm total programme across seven zones.</div>
+      </div>
+      <div class="chart-wrap"><canvas id="gfaChart"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     SECTION 4 — REVPAR / TREVPAR TABLE
+======================================================================== -->
+<section>
+  <div class="section-head">
+    <div class="section-eyebrow">Revenue Projections</div>
+    <h2>RevPAR &amp; TRevPAR Across Scenarios</h2>
+    <p>Daily rate, occupancy, and total revenue—every scenario, side by side.</p>
+  </div>
+  <div class="card">
+    <div class="tbl-wrap"><table class="data" id="revparTable"></table></div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     SECTION 5 — P&L
+======================================================================== -->
+<section>
+  <div class="section-head">
+    <div class="section-eyebrow">Operating P&amp;L</div>
+    <h2>Stabilised P&amp;L: Base vs. Combined Stress</h2>
+    <p>Full operating profit and loss. Adjust the inputs to see how each line moves.</p>
+  </div>
+  <div class="card">
+    <div class="tbl-wrap"><table class="data" id="pnlTable"></table></div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     SECTION 6 — FEASIBILITY KPIs TABLE
+======================================================================== -->
+<section>
+  <div class="section-head">
+    <div class="section-eyebrow">Feasibility KPIs</div>
+    <h2>Investment Metrics: Yield, Asset Value, IRR</h2>
+    <p>Development yield, value-creation bridge, indicative unleveraged IRR, and pre-opening cost band.</p>
+  </div>
+  <div class="card">
+    <div class="tbl-wrap"><table class="data" id="kpiTable"></table></div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     SECTION 7 — SENSITIVITY HEATMAPS (two-way)
+======================================================================== -->
+<section>
+  <div class="section-head">
+    <div class="section-eyebrow">Sensitivity Analysis</div>
+    <h2>Two-Way Sensitivity: Operating &amp; Capital-Markets Risk</h2>
+    <p>Operational sensitivity (left) tests revenue assumptions — ADR rows USD 1,828 / 1,935 / 2,150 (base) / 2,365 / 2,472, occupancy columns 45% / 50% / 55% / 65% (base) / 75%, shaded by development yield. Capital-markets sensitivity (right) tests financial assumptions at the chosen hold — NPV across seven discount rates and five exit caps. The base case is highlighted in both grids.</p>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-head">
+        <h3>NOI Sensitivity — ADR × Occupancy</h3>
+        <div class="sub">Cells shaded by development yield. Green ≥ 10%, amber 8–10%, red below 8%.</div>
+      </div>
+      <div class="hm-wrap"><div id="heatmap" class="heatmap"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <h3>NPV Sensitivity — Discount Rate × Exit Cap</h3>
+        <div class="sub">7×5 grid at chosen hold. Green ≥ USD 5M NPV, amber 0–5M, red negative.</div>
+      </div>
+      <div class="hm-wrap"><div id="discCapHeatmap" class="heatmap heatmap-7"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     SECTION 8 — SPACE PROGRAMME
+======================================================================== -->
+<section>
+  <div class="section-head">
+    <div class="section-eyebrow">Space Programme</div>
+    <h2>Gross Floor Area Allocation</h2>
+    <p>Detailed GFA by zone and use, sourced from HVS, CBRE Hotels, ISPA, and Penner et al.</p>
+  </div>
+  <div class="card">
+    <div id="spaceProgramme"></div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     SECTION 9 — COHERENCE AUDIT
+======================================================================== -->
+<section>
+  <div class="section-head">
+    <div class="section-eyebrow">Internal Coherence</div>
+    <h2>Seven-Point Coherence Audit</h2>
+    <p>Verifies concept ↔ space programme ↔ financial model alignment. Re-evaluates live as inputs change.</p>
+  </div>
+  <div class="card">
+    <div id="coherenceList"></div>
+    <div id="verdictBar" class="verdict-bar"></div>
+  </div>
+</section>
+
+</main>
+
+<!-- ========================================================================
+     FLOATING ACTION BUTTON + DRAWER
+======================================================================== -->
+<button id="fab" class="fab" aria-label="Adjust inputs">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h12M3 18h6"/></svg>
+  Adjust Inputs
+</button>
+
+<div id="scrim" class="scrim"></div>
+
+<aside id="drawer" class="drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <button class="drawer-close" id="drawerClose" aria-label="Close">×</button>
+    <h3>Model Inputs</h3>
+    <p>Edit any value on the Custom tab. The dashboard recalculates instantly. Custom inputs persist across sessions.</p>
+    <div class="drawer-banner" id="drawerBanner" style="display:none;">
+      <span class="drawer-banner-icon" aria-hidden="true">⚡</span>
+      <span class="drawer-banner-text"></span>
+      <button class="drawer-banner-cta" id="drawerBannerCta" type="button">Switch to Custom</button>
+    </div>
+  </div>
+  <div class="drawer-body">
+    <div id="inputsContainer"></div>
+    <div class="live-summary">
+      <div class="live-summary-title" id="liveSummaryTitle">Live Preview · Base Case</div>
+      <div class="live-summary-grid" id="liveSummary"></div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <button id="resetBtn" class="btn-secondary">Reset Custom to Base</button>
+    <button id="applyBtn" class="btn-primary">Apply &amp; Close</button>
+  </div>
+</aside>
+
+<!-- Tooltip element used dynamically -->
+<div id="globalTip" class="tip"></div>
+
+<script src="dashboard.js"></script>
+</body>
+</html>
