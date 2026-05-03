@@ -66,7 +66,7 @@ export function DcfLineChart({ base, stress, inputs: m }: Props) {
             }}
             formatter={(v: number, key) => [
               fmtCurrency(v, { compact: true }),
-              key === "base" ? "Base" : key === "stress" ? "Combined Stress" : (key as string),
+              key === "base" ? "Base" : key === "stress" ? "Stress" : (key as string),
             ]}
           />
           <Legend
@@ -76,9 +76,9 @@ export function DcfLineChart({ base, stress, inputs: m }: Props) {
             wrapperStyle={{ fontSize: 12, color: c["--foreground"] }}
             formatter={(v) => {
               if (v === "base") return "Base — Operating Cash Flow";
-              if (v === "stress") return "Combined Stress — Operating Cash Flow";
+              if (v === "stress") return "Stress — Operating Cash Flow";
               if (v === "baseTerminal") return "Base — Terminal Value";
-              if (v === "stressTerminal") return "Combined Stress — Terminal Value";
+              if (v === "stressTerminal") return "Stress — Terminal Value";
               return v as string;
             }}
           />

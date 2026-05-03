@@ -106,7 +106,7 @@ export function TabVerdict({ active, scenarios, inputs: m, isModified, onJumpToA
           title="Development Yield"
           hurdle={`Hurdle: ≥ ${fmtPercent(m.capRate, 2)} Cap Rate`}
           baseValue={fmtPercent(devYBase, 2)}
-          baseSub={`Base Case ${fmtBps(spreadBase)}`}
+          baseSub={`Base ${fmtBps(spreadBase)}`}
           basePass={yieldBasePass}
           stressValue={fmtPercent(devYStress, 2)}
           stressSub={`Stress Case ${fmtBps(spreadStress)}`}
@@ -118,7 +118,7 @@ export function TabVerdict({ active, scenarios, inputs: m, isModified, onJumpToA
           title="Unleveraged Internal Rate Of Return (IRR)"
           hurdle="Hurdle: 8–12% Patient-Capital Band"
           baseValue={fmtPercent(irrBase, 1)}
-          baseSub="Base Case"
+          baseSub="Base"
           basePass={irrBasePass}
           stressValue={fmtPercent(irrStress, 1)}
           stressSub="Stress Case"
@@ -130,7 +130,7 @@ export function TabVerdict({ active, scenarios, inputs: m, isModified, onJumpToA
           title="Net Present Value (NPV)"
           hurdle="Hurdle: Positive At Patient-Capital Rate"
           baseValue={fmtCurrency(npv7Base, { compact: true, signed: true })}
-          baseSub="Base Case @ 7% Hurdle"
+          baseSub="Base @ 7% Hurdle"
           basePass={npvBasePass}
           stressValue={fmtCurrency(npv7Stress, { compact: true, signed: true })}
           stressSub="Stress Case @ 7% Hurdle"
@@ -148,7 +148,7 @@ export function TabVerdict({ active, scenarios, inputs: m, isModified, onJumpToA
           </div>
           <div className="grid grid-cols-2 gap-3 text-[13px]">
             <div>
-              <div className="text-[hsl(var(--muted-foreground))]">Base Case</div>
+              <div className="text-[hsl(var(--muted-foreground))]">Base</div>
               <div className="num text-[15px] font-semibold">
                 {fmtCurrency(npv11Base, { compact: true, signed: true })}{" "}
                 <span

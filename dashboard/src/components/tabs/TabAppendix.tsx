@@ -11,6 +11,7 @@ import { SourcesList } from "@/components/SourcesList";
 import { Badge } from "@/components/ui/Badge";
 import { DefiscPanel } from "@/components/DefiscPanel";
 import { RicsPanel } from "@/components/RicsPanel";
+import { CompBenchmarks } from "@/components/CompBenchmarks";
 
 export function TabAppendix() {
   // Group inputs
@@ -190,6 +191,8 @@ export function TabAppendix() {
           ))}
         </ul>
       </div>
+
+      <CompBenchmarks />
 
       <SourcesList />
     </div>

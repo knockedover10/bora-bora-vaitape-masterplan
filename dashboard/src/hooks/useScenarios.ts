@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { ScenarioKey, ScenarioRow } from "@/data/model";
 import { computeScenario, computeCashflows, irr, npv } from "@/lib/calc";
 import type { ModelInputs } from "@/hooks/useModelInputs";
+import { useExcelScenarios, type ExcelScenarioRow } from "@/hooks/useExcelScenarios";
 
 export interface CustomEdit {
   adrShift: number;
@@ -16,6 +17,10 @@ export interface ScenarioBundle extends ScenarioRow {
   npv9: number | null;
   npv11: number | null;
   cashflows: number[] | null;
+  /** Set when this bundle was sourced from Excel scenarios.json (vs live calc). */
+  fromExcel?: boolean;
+  /** Optional raw Excel scenario data — exposed so tabs can drill into per-year P&L. */
+  excel?: ExcelScenarioRow;
 }
 
 const customSeedsDefault = {
@@ -26,8 +31,8 @@ const customSeedsDefault = {
 
 /**
  * Build a scenario bundle from raw scenario shifts + global ModelInputs.
- * Used for both the fixed Base/Upside/Stress trio (now computed live) and the
- * three user-editable Scenario A/B/C slots.
+ * Used for the user-editable Scenario A/B/C slots — the fixed Base/Upside/Stress
+ * trio is sourced from the Excel export (scenarios.json) when available.
  */
 function buildBundle(
   key: ScenarioKey,
@@ -63,11 +68,73 @@ function buildBundle(
     npv9: npv(0.09, cf),
     npv11: npv(0.11, cf),
     cashflows: cf,
+    fromExcel: false,
   };
+}
+
+/**
+ * Build a scenario bundle directly from Excel scenarios.json output.
+ * This makes the dashboard fully reactive to the OPERATING SCENARIO SWITCHER
+ * in Hotel_DCF_Sensitivity_Model_v2.xlsx.
+ */
+function buildBundleFromExcel(
+  key: ScenarioKey,
+  label: string,
+  defaultActive: boolean,
+  excel: ExcelScenarioRow,
+  m: ModelInputs
+): ScenarioBundle {
+  const inp = excel.inputs;
+  const pnl = excel.stabilised_pnl;
+  const head = excel.headline;
+  const npvs = excel.npv_at_rates;
+  const cap = inp.exit_cap_rate;
+
+  // Implied TRevPAR uplift = (FnB + Other revenue) / Rooms revenue
+  const trevparUplift =
+    (pnl.fnb_revenue + pnl.other_revenue) / pnl.rooms_revenue;
+
+  const ebitda = pnl.gop * (1 - 0.08); // mgmt incentive 8% (anchors)
+  // total dev cost from Excel (overrides the editable input for fixed scenarios)
+  const devCost = inp.total_dev_cost;
+  const assetValue = head.implied_asset_value;
+  const devYield = head.dev_yield_y4;
+  const yieldSpread = head.yield_spread;
+
+  return {
+    key,
+    label,
+    fixed: true,
+    defaultActive,
+    adr: inp.stabilized_adr,
+    occ: inp.stabilized_occupancy,
+    trevpar_uplift: trevparUplift,
+    revpar: inp.stabilized_revpar,
+    total_revenue: pnl.total_revenue,
+    gop: pnl.gop,
+    gop_margin: pnl.gop_margin,
+    ebitda,
+    noi: pnl.noi,
+    asset_value: assetValue,
+    dev_yield: devYield,
+    yield_spread: yieldSpread,
+    gate1: assetValue > devCost ? "PASS" : "FAIL",
+    gate3: yieldSpread >= 0.01 ? "PASS" : "FAIL",
+    irr12yr: head.irr,
+    npv7: npvs.d_07,
+    npv9: npvs.d_09,
+    npv11: npvs.d_11,
+    cashflows: excel.cash_flow_series.operating_fcf,
+    fromExcel: true,
+    excel,
+    // ignore m, capRate vs inp.cap is already accounted for in Excel
+    _cap: cap,
+  } as ScenarioBundle;
 }
 
 export function useScenarios(m: ModelInputs) {
   const [activeKey, setActiveKey] = useState<ScenarioKey>("base");
+  const { data: excelData } = useExcelScenarios();
 
   const [fixedActive, setFixedActive] = useState<Record<"base" | "upside" | "stress", boolean>>({
     base: true,
@@ -84,44 +151,26 @@ export function useScenarios(m: ModelInputs) {
   const scenarios = useMemo<ScenarioBundle[]>(() => {
     const out: ScenarioBundle[] = [];
 
-    // Base — uses current ModelInputs occupancy + trevpar uplift, ADR shift = 0
-    out.push(
-      buildBundle(
-        "base",
-        "Base Case",
-        true,
-        true,
-        { adrShift: 0, occupancy: m.occBase, trevparUplift: m.trevparUplift },
-        m
-      )
-    );
+    // Fixed trio — prefer Excel data when loaded; fall back to live calc.
+    if (excelData) {
+      out.push(buildBundleFromExcel("base", "Base", true, excelData.scenarios.base, m));
+      out.push(buildBundleFromExcel("upside", "Upside", true, excelData.scenarios.upside, m));
+      out.push(buildBundleFromExcel("stress", "Stress", true, excelData.scenarios.stress, m));
+    } else {
+      // Fallback live-calc trio (matches former behaviour while JSON loads)
+      out.push(
+        buildBundle("base", "Base", true, true, { adrShift: 0, occupancy: m.occBase, trevparUplift: m.trevparUplift }, m)
+      );
+      const upsideOcc = Math.min(m.occBase + 0.07, 0.85);
+      out.push(
+        buildBundle("upside", "Upside", true, true, { adrShift: 0.15, occupancy: upsideOcc, trevparUplift: m.trevparUplift }, m)
+      );
+      out.push(
+        buildBundle("stress", "Stress", true, true, { adrShift: -0.15, occupancy: 0.5, trevparUplift: m.trevparUplift }, m)
+      );
+    }
 
-    // Upside — base + 7pp occ, +15% ADR, same TRevPAR (capped at 0.85)
-    const upsideOcc = Math.min(m.occBase + 0.07, 0.85);
-    out.push(
-      buildBundle(
-        "upside",
-        "Upside",
-        true,
-        true,
-        { adrShift: 0.15, occupancy: upsideOcc, trevparUplift: m.trevparUplift },
-        m
-      )
-    );
-
-    // Combined Stress — ADR -15%, occupancy floored at 50%, same TRevPAR
-    out.push(
-      buildBundle(
-        "stress",
-        "Combined Stress",
-        true,
-        true,
-        { adrShift: -0.15, occupancy: 0.5, trevparUplift: m.trevparUplift },
-        m
-      )
-    );
-
-    // User-editable Scenario A/B/C
+    // User-editable Scenario A/B/C — always live-calc against current ModelInputs
     (["customA", "customB", "customC"] as const).forEach((k, i) => {
       const c = customs[k];
       out.push(
@@ -137,7 +186,7 @@ export function useScenarios(m: ModelInputs) {
     });
 
     return out;
-  }, [customs, m]);
+  }, [customs, m, excelData]);
 
   const activeScenarios = useMemo(() => {
     return scenarios.filter((s) => {
@@ -180,5 +229,6 @@ export function useScenarios(m: ModelInputs) {
     isActive,
     customs,
     updateCustom,
+    excelLoaded: excelData !== null,
   };
 }

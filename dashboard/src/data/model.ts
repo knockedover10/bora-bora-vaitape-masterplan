@@ -71,7 +71,7 @@ export interface ScenarioRow {
 export const fixedScenarios: ScenarioRow[] = [
   {
     key: "base",
-    label: "Base Case",
+    label: "Base",
     fixed: true,
     defaultActive: true,
     adr: 2150,
@@ -111,7 +111,7 @@ export const fixedScenarios: ScenarioRow[] = [
   },
   {
     key: "stress",
-    label: "Combined Stress",
+    label: "Stress",
     fixed: true,
     defaultActive: true,
     adr: 1827.5,

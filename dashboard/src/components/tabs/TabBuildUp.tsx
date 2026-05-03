@@ -155,7 +155,7 @@ export function TabBuildUp({ active, scenarios, inputs: m, isModified }: Props) 
       {/* Side-by-side P&L table — equal-width scenario columns */}
       <div className="card-base p-5">
         <h3 className="mb-3 text-[16px] font-semibold tracking-tight">
-          Profit And Loss (P&amp;L) — Base · Upside · Combined Stress
+          Profit And Loss (P&amp;L) — Base · Upside · Stress
         </h3>
         <div className="-mx-2 overflow-x-auto">
           <table className="w-full table-fixed min-w-[640px] text-[13px] num">
@@ -241,7 +241,7 @@ export function TabBuildUp({ active, scenarios, inputs: m, isModified }: Props) 
       <div className="card-base p-5">
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="text-[16px] font-semibold tracking-tight">
-            Net Operating Income (NOI) Waterfall — Base Case
+            Net Operating Income (NOI) Waterfall — Active Scenario
           </h3>
           <span className="text-[12px] text-[hsl(var(--muted-foreground))] num">
             Where The Money Goes — Revenue To NOI

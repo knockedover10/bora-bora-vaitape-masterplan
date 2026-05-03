@@ -18,7 +18,7 @@ export function DefiscPanel() {
           Upside Lever
         </Badge>
         <span className="text-[13px] font-medium text-[hsl(var(--accent))]">
-          Held In Reserve — NOT In Base Case
+          Held In Reserve — NOT In Base
         </span>
       </div>
 

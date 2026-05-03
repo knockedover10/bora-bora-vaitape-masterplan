@@ -20,7 +20,7 @@ export function TabReturns({ scenarios, inputs: m, isModified }: Props) {
       <div className="card-base p-5">
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="text-[16px] font-semibold tracking-tight">
-            {m.holdYears}-Year Cash Flow — Base &amp; Combined Stress
+            {m.holdYears}-Year Cash Flow — Base &amp; Stress
             {isModified && (
               <span
                 title="Recalculated From Your Inputs"
