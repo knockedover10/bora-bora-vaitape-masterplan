@@ -48,11 +48,14 @@ export function TabBuildUp({ active, scenarios, inputs: m, isModified }: Props) 
     { name: "Net Operating Income", value: noi, color: c["--accent"] },
   ];
 
-  // Get the three fixed scenarios from live-computed list (Base, Upside, Stress)
+  // Get the three fixed scenarios from live-computed list.
+  // Display order: Stress → Base → Upside (downside / expected / upside), matching the scenario bar.
   const baseS = scenarios.find((s) => s.key === "base")!;
   const upsideS = scenarios.find((s) => s.key === "upside")!;
   const stressS = scenarios.find((s) => s.key === "stress")!;
-  const fixedTrio = [baseS, upsideS, stressS];
+  const fixedTrio = [stressS, baseS, upsideS];
+  // Index of the Base column inside fixedTrio — used by the P&L Row component for delta anchoring.
+  const BASE_IDX = 1;
 
   // Waterfall data — Active scenario decomposition into 6 horizontal bars.
   // Reads from `active` (not Base) so the bars rebuild when the operator
@@ -159,7 +162,7 @@ export function TabBuildUp({ active, scenarios, inputs: m, isModified }: Props) 
       {/* Side-by-side P&L table — equal-width scenario columns */}
       <div className="card-base p-5">
         <h3 className="mb-3 text-[16px] font-semibold tracking-tight">
-          Profit And Loss (P&amp;L) — Base · Upside · Stress
+          Profit And Loss (P&amp;L) — Stress · Base · Upside
         </h3>
         <div className="-mx-2 overflow-x-auto">
           <table className="w-full table-fixed min-w-[640px] text-[13px] num">
@@ -184,18 +187,21 @@ export function TabBuildUp({ active, scenarios, inputs: m, isModified }: Props) 
                 label="Average Daily Rate (ADR)"
                 values={fixedTrio.map((s) => fmtCurrency(s.adr ?? 0))}
                 rawValues={fixedTrio.map((s) => s.adr ?? 0)}
+                baseIdx={BASE_IDX}
                 deltaFormat="currency"
               />
               <Row
                 label="Occupancy"
                 values={fixedTrio.map((s) => fmtPercent(s.occ ?? 0, 0))}
                 rawValues={fixedTrio.map((s) => s.occ ?? 0)}
+                baseIdx={BASE_IDX}
                 deltaFormat="pct_points"
               />
               <Row
                 label="Revenue Per Available Room (RevPAR)"
                 values={fixedTrio.map((s) => fmtCurrency(s.revpar ?? 0))}
                 rawValues={fixedTrio.map((s) => s.revpar ?? 0)}
+                baseIdx={BASE_IDX}
                 deltaFormat="currency"
               />
               <Row
@@ -204,6 +210,7 @@ export function TabBuildUp({ active, scenarios, inputs: m, isModified }: Props) 
                   fmtCurrency(s.total_revenue ?? 0, { compact: true })
                 )}
                 rawValues={fixedTrio.map((s) => s.total_revenue ?? 0)}
+                baseIdx={BASE_IDX}
                 deltaFormat="currency"
                 bold
               />
@@ -213,6 +220,7 @@ export function TabBuildUp({ active, scenarios, inputs: m, isModified }: Props) 
                   fmtCurrency(-(s.total_revenue ?? 0) * m.opexRatio, { compact: true })
                 )}
                 rawValues={fixedTrio.map((s) => -(s.total_revenue ?? 0) * m.opexRatio)}
+                baseIdx={BASE_IDX}
                 deltaFormat="currency"
                 directionGood="up"
                 muted
@@ -221,6 +229,7 @@ export function TabBuildUp({ active, scenarios, inputs: m, isModified }: Props) 
                 label="Gross Operating Profit (GOP)"
                 values={fixedTrio.map((s) => fmtCurrency(s.gop ?? 0, { compact: true }))}
                 rawValues={fixedTrio.map((s) => s.gop ?? 0)}
+                baseIdx={BASE_IDX}
                 deltaFormat="currency"
                 bold
               />
@@ -228,6 +237,7 @@ export function TabBuildUp({ active, scenarios, inputs: m, isModified }: Props) 
                 label="GOP Margin"
                 values={fixedTrio.map((s) => fmtPercent(s.gop_margin ?? 0, 1))}
                 rawValues={fixedTrio.map((s) => s.gop_margin ?? 0)}
+                baseIdx={BASE_IDX}
                 deltaFormat="pct_points"
                 muted
               />
@@ -235,6 +245,7 @@ export function TabBuildUp({ active, scenarios, inputs: m, isModified }: Props) 
                 label="Earnings Before Interest, Tax, Depreciation And Amortisation (EBITDA)"
                 values={fixedTrio.map((s) => fmtCurrency(s.ebitda ?? 0, { compact: true }))}
                 rawValues={fixedTrio.map((s) => s.ebitda ?? 0)}
+                baseIdx={BASE_IDX}
                 deltaFormat="currency"
                 bold
               />
@@ -242,6 +253,7 @@ export function TabBuildUp({ active, scenarios, inputs: m, isModified }: Props) 
                 label="Net Operating Income (NOI)"
                 values={fixedTrio.map((s) => fmtCurrency(s.noi ?? 0))}
                 rawValues={fixedTrio.map((s) => s.noi ?? 0)}
+                baseIdx={BASE_IDX}
                 deltaFormat="currency"
                 emphasised
               />
@@ -251,12 +263,14 @@ export function TabBuildUp({ active, scenarios, inputs: m, isModified }: Props) 
                   fmtCurrency(s.asset_value ?? 0, { compact: true })
                 )}
                 rawValues={fixedTrio.map((s) => s.asset_value ?? 0)}
+                baseIdx={BASE_IDX}
                 deltaFormat="currency"
               />
               <Row
                 label="Development Yield"
                 values={fixedTrio.map((s) => fmtPercent(s.dev_yield ?? 0, 2))}
                 rawValues={fixedTrio.map((s) => s.dev_yield ?? 0)}
+                baseIdx={BASE_IDX}
                 deltaFormat="pct_points"
               />
             </tbody>
@@ -347,6 +361,7 @@ function Row({
   label,
   values,
   rawValues,
+  baseIdx = 0,
   deltaFormat,
   directionGood,
   bold,
@@ -355,8 +370,10 @@ function Row({
 }: {
   label: string;
   values: string[];
-  /** Raw numeric values aligned to `values` for delta calculation. Order: [Base, Upside, Stress] (matches fixedTrio.) */
+  /** Raw numeric values aligned to `values` for delta calculation. */
   rawValues?: number[];
+  /** Index of the Base column inside `values` / `rawValues` — used to anchor deltas. */
+  baseIdx?: number;
   /** Format used for the DeltaChip. */
   deltaFormat?: "currency" | "percent" | "pct_points" | "number";
   /** Whether “up” is the desirable direction (default “up”). Use “down” for cost rows. */
@@ -365,8 +382,7 @@ function Row({
   muted?: boolean;
   emphasised?: boolean;
 }) {
-  // fixedTrio order is [base, upside, stress] — base is index 0.
-  const baseValue = rawValues?.[0];
+  const baseValue = rawValues?.[baseIdx];
   const showDeltas = rawValues !== undefined && deltaFormat !== undefined && baseValue !== undefined;
   return (
     <tr className="border-t border-[hsl(var(--border))]">
@@ -398,7 +414,7 @@ function Row({
         >
           <span className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
             <span>{v}</span>
-            {showDeltas && i > 0 && rawValues![i] !== undefined ? (
+            {showDeltas && i !== baseIdx && rawValues![i] !== undefined ? (
               <DeltaChip
                 value={rawValues![i]!}
                 base={baseValue!}

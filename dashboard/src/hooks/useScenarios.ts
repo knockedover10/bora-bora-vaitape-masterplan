@@ -151,22 +151,24 @@ export function useScenarios(m: ModelInputs) {
   const scenarios = useMemo<ScenarioBundle[]>(() => {
     const out: ScenarioBundle[] = [];
 
-    // Fixed trio — prefer Excel data when loaded; fall back to live calc.
+    // Fixed trio — ordered Stress → Base → Upside (downside, expected, upside) so the
+    // scenario bar reads as a risk spectrum. This order propagates everywhere that
+    // consumes `scenarios` (chips, IRR bars, NPV table, P&L table, etc.).
     if (excelData) {
+      out.push(buildBundleFromExcel("stress", "Stress", true, excelData.scenarios.stress, m));
       out.push(buildBundleFromExcel("base", "Base", true, excelData.scenarios.base, m));
       out.push(buildBundleFromExcel("upside", "Upside", true, excelData.scenarios.upside, m));
-      out.push(buildBundleFromExcel("stress", "Stress", true, excelData.scenarios.stress, m));
     } else {
       // Fallback live-calc trio (matches former behaviour while JSON loads)
+      out.push(
+        buildBundle("stress", "Stress", true, true, { adrShift: -0.15, occupancy: 0.5, trevparUplift: m.trevparUplift }, m)
+      );
       out.push(
         buildBundle("base", "Base", true, true, { adrShift: 0, occupancy: m.occBase, trevparUplift: m.trevparUplift }, m)
       );
       const upsideOcc = Math.min(m.occBase + 0.07, 0.85);
       out.push(
         buildBundle("upside", "Upside", true, true, { adrShift: 0.15, occupancy: upsideOcc, trevparUplift: m.trevparUplift }, m)
-      );
-      out.push(
-        buildBundle("stress", "Stress", true, true, { adrShift: -0.15, occupancy: 0.5, trevparUplift: m.trevparUplift }, m)
       );
     }
 
