@@ -15,11 +15,11 @@ export function Header({ theme, onToggleTheme, onOpenInputs, inputsModified }: P
         <div className="flex items-center gap-3">
           <Logo />
           <div className="flex flex-col">
-            <h1 className="text-base font-semibold tracking-tight sm:text-lg">
-              Bora Bora Net-Zero Luxury Masterplan | Luxury Hotel
+            <h1 className="font-display text-[17px] font-medium leading-tight tracking-[-0.018em] sm:text-[20px]">
+              Bora Bora Net-Zero Luxury Masterplan <span className="text-[hsl(var(--muted-foreground))] font-normal">|</span> Luxury Hotel
             </h1>
-            <p className="text-xs text-[hsl(var(--muted-foreground))] sm:text-sm">
-              Feasibility Modeling Dashboard (Beta)
+            <p className="label-caps mt-0.5">
+              Feasibility Modeling Dashboard · Beta
             </p>
           </div>
         </div>

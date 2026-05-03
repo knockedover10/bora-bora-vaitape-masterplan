@@ -46,92 +46,84 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))]">
-      <Header
-        theme={theme}
-        onToggleTheme={toggleTheme}
-        onOpenInputs={() => setInputsOpen(true)}
-        inputsModified={isModified}
-      />
+      {/* Frozen top assembly — header + scenario bar + nav stay pinned during scroll */}
+      <div className="top-stack">
+        <Header
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onOpenInputs={() => setInputsOpen(true)}
+          inputsModified={isModified}
+        />
 
-      <ScenarioBar
-        scenarios={scenarios}
-        activeKey={activeKey}
-        setActiveKey={setActiveKey}
-        toggle={toggle}
-        isActive={isActive}
-        onEditCustoms={() => setEditorOpen(true)}
-      />
+        <ScenarioBar
+          scenarios={scenarios}
+          activeKey={activeKey}
+          setActiveKey={setActiveKey}
+          toggle={toggle}
+          isActive={isActive}
+          onEditCustoms={() => setEditorOpen(true)}
+        />
 
-      {/* Modified-inputs warning banner */}
-      {isModified && (
-        <div
-          role="status"
-          className="border-y border-l-4 border-[hsl(var(--warning))] border-l-[hsl(var(--warning))] bg-[hsl(var(--warning)/15%)]"
-        >
-          <div className="container-page flex flex-wrap items-center gap-3 py-2.5">
-            <AlertTriangle size={16} className="shrink-0 text-[hsl(var(--warning))]" />
-            <span className="text-[13px] font-medium text-[hsl(var(--foreground))]">
-              Inputs Modified — Showing Custom Projection
-            </span>
-            <span className="hidden text-[12px] text-[hsl(var(--muted-foreground))] sm:inline">
-              {modifiedKeys.size} of 11 levers overridden
-            </span>
-            <button
-              type="button"
-              onClick={resetAll}
-              className="ml-auto rounded-md border border-[hsl(var(--warning)/40%)] bg-[hsl(var(--surface-raised))] px-3 py-1 text-[12px] font-medium text-[hsl(var(--warning))] hover:bg-[hsl(var(--warning)/15%)] focus-ring"
-            >
-              Reset All To Defaults
-            </button>
+        {/* Modified-inputs warning banner */}
+        {isModified && (
+          <div
+            role="status"
+            className="border-y border-l-4 border-[hsl(var(--warning))] border-l-[hsl(var(--warning))] bg-[hsl(var(--warning)/15%)]"
+          >
+            <div className="container-page flex flex-wrap items-center gap-3 py-2.5">
+              <AlertTriangle size={16} className="shrink-0 text-[hsl(var(--warning))]" />
+              <span className="text-[13px] font-medium text-[hsl(var(--foreground))]">
+                Inputs Modified — Showing Custom Projection
+              </span>
+              <span className="hidden text-[12px] text-[hsl(var(--muted-foreground))] sm:inline">
+                {modifiedKeys.size} of 11 levers overridden
+              </span>
+              <button
+                type="button"
+                onClick={resetAll}
+                className="ml-auto rounded-md border border-[hsl(var(--warning)/40%)] bg-[hsl(var(--surface-raised))] px-3 py-1 text-[12px] font-medium text-[hsl(var(--warning))] hover:bg-[hsl(var(--warning)/15%)] focus-ring"
+              >
+                Reset All To Defaults
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Tabs */}
-      <nav className="sticky top-0 z-20 border-b border-[hsl(var(--border))] bg-[hsl(var(--surface))/95%] backdrop-blur supports-[backdrop-filter]:bg-[hsl(var(--surface))/85%]">
-        <div className="container-page">
-          {/* Mobile: select */}
-          <div className="md:hidden py-2">
-            <label className="sr-only" htmlFor="tab-select">
-              Section
-            </label>
-            <select
-              id="tab-select"
-              className="w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface-raised))] px-3 py-2 text-[14px] focus-ring"
-              value={tab}
-              onChange={(e) => setTab(e.target.value as TabId)}
+        {/* Tabs — horizontal nav bar on every breakpoint */}
+        <nav
+          aria-label="Section navigation"
+          className="border-b border-[hsl(var(--border))] bg-[hsl(var(--surface))]"
+        >
+          <div className="container-page">
+            <div
+              role="tablist"
+              className="flex items-stretch gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {TABS.map((t) => (
-                <option key={t.id} value={t.id}>
+                <button
+                  key={t.id}
+                  role="tab"
+                  type="button"
+                  onClick={() => setTab(t.id)}
+                  aria-current={tab === t.id ? "page" : undefined}
+                  aria-selected={tab === t.id}
+                  className={cn(
+                    "relative shrink-0 px-3 py-3 text-[13px] font-medium tracking-tight transition-colors focus-ring sm:px-4 sm:text-[13.5px]",
+                    tab === t.id
+                      ? "text-[hsl(var(--foreground))]"
+                      : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+                  )}
+                >
                   {t.label}
-                </option>
+                  {tab === t.id && (
+                    <span className="absolute inset-x-3 -bottom-px h-[2px] bg-[hsl(var(--accent))]" />
+                  )}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
-          {/* Desktop: tabs */}
-          <div className="hidden md:flex items-stretch gap-1 overflow-x-auto">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTab(t.id)}
-                aria-current={tab === t.id ? "page" : undefined}
-                className={cn(
-                  "relative px-4 py-3 text-[13.5px] font-medium tracking-tight transition-colors focus-ring",
-                  tab === t.id
-                    ? "text-[hsl(var(--foreground))]"
-                    : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
-                )}
-              >
-                {t.label}
-                {tab === t.id && (
-                  <span className="absolute inset-x-3 -bottom-px h-[2px] bg-[hsl(var(--accent))]" />
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      </nav>
+        </nav>
+      </div>
 
       <main className="container-page py-6 sm:py-8">
         {tab === "overview" && (

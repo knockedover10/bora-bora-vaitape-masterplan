@@ -2,45 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ====== Vaitape v7.1 — Neutral Slate-Blue palette (HSL fragments) ====== */
+/* =====================================================================
+   Vaitape v8 — Editorial Luxury Financial Consultancy palette
+   Tones drawn from the v7 hero render: warm pale stone, sage greenery,
+   muted lagoon teal, soft peach sunrise, deep ink. Restrained, neutral,
+   editorial — designed to read like a private-bank pitch book.
+   ===================================================================== */
 @layer base {
   :root {
-    /* Light mode */
-    --background: 42 22% 97%;          /* warm off-white */
-    --surface: 0 0% 100%;
-    --surface-raised: 40 18% 98%;
-    --foreground: 220 25% 14%;         /* deep slate */
-    --muted: 220 14% 88%;
-    --muted-foreground: 220 10% 45%;
-    --border: 220 14% 88%;
-    --accent: 217 33% 35%;             /* deep slate-blue */
-    --accent-soft: 217 33% 92%;        /* pale slate-blue fill */
-    --accent-foreground: 0 0% 100%;
-    --positive: 145 28% 36%;           /* PASS muted forest */
-    --success: 145 28% 36%;            /* alias for legacy */
-    --negative: 4 50% 45%;             /* FAIL muted brick */
-    --danger: 4 50% 45%;               /* alias */
-    --warning: 35 70% 48%;             /* warm amber */
-    --ring: 217 33% 35%;
+    /* Light mode — warm neutral with muted teal accent */
+    --background: 36 25% 96%;          /* warm bone / pale sand */
+    --surface: 38 30% 98%;             /* paper white, slight warmth */
+    --surface-raised: 36 22% 99%;      /* subtle lift */
+    --foreground: 30 12% 14%;          /* deep ink, warm-cool neutral */
+    --muted: 34 14% 88%;               /* warm grey */
+    --muted-foreground: 30 8% 42%;     /* mid grey, warm */
+    --border: 34 16% 86%;              /* soft warm hairline */
+    --accent: 188 32% 32%;             /* muted lagoon teal — editorial accent */
+    --accent-soft: 188 28% 92%;        /* pale teal wash */
+    --accent-foreground: 38 30% 98%;
+    --positive: 145 22% 38%;           /* PASS — muted sage */
+    --success: 145 22% 38%;
+    --negative: 8 42% 46%;             /* FAIL — muted terracotta */
+    --danger: 8 42% 46%;
+    --warning: 28 55% 50%;             /* warm sienna */
+    --ring: 188 32% 32%;
   }
 
   .dark {
-    --background: 220 18% 10%;
-    --surface: 220 18% 13%;
-    --surface-raised: 220 16% 16%;
-    --foreground: 40 15% 92%;
-    --muted: 220 14% 22%;
-    --muted-foreground: 220 8% 65%;
-    --border: 220 14% 22%;
-    --accent: 217 40% 65%;             /* lighter slate-blue */
-    --accent-soft: 217 33% 22%;
-    --accent-foreground: 220 18% 10%;
-    --positive: 145 35% 55%;
-    --success: 145 35% 55%;
-    --negative: 4 60% 60%;
-    --danger: 4 60% 60%;
-    --warning: 35 80% 60%;
-    --ring: 217 40% 65%;
+    --background: 30 12% 9%;
+    --surface: 30 12% 12%;
+    --surface-raised: 30 10% 15%;
+    --foreground: 36 22% 92%;
+    --muted: 30 10% 22%;
+    --muted-foreground: 32 10% 65%;
+    --border: 30 10% 22%;
+    --accent: 188 38% 60%;
+    --accent-soft: 188 32% 22%;
+    --accent-foreground: 30 12% 9%;
+    --positive: 145 30% 58%;
+    --success: 145 30% 58%;
+    --negative: 8 55% 62%;
+    --danger: 8 55% 62%;
+    --warning: 28 65% 60%;
+    --ring: 188 38% 60%;
   }
 
   * { border-color: hsl(var(--border)); }
@@ -48,16 +53,27 @@
   body {
     background: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    /* Editorial pairing: Fraunces serif for display, Inter Tight for body */
+    font-family: 'Inter Tight', 'Inter', ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: "ss01" 1, "cv11" 1;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    letter-spacing: -0.005em;
   }
+
+  /* Headlines & site title use a refined high-contrast serif */
+  h1, h2, h3, .font-display {
+    font-family: 'Fraunces', 'Source Serif 4', Georgia, serif;
+    font-feature-settings: "ss01" 1, "ss02" 1;
+    letter-spacing: -0.015em;
+  }
+
   .num, table, .kpi-value {
     font-feature-settings: "tnum" 1, "lnum" 1;
     font-variant-numeric: tabular-nums lining-nums;
   }
   ::selection {
-    background: hsl(var(--accent) / 0.25);
+    background: hsl(var(--accent) / 0.22);
   }
 }
 
@@ -67,9 +83,21 @@
     @apply rounded-lg border bg-[hsl(var(--surface-raised))] shadow-[0_1px_2px_rgba(0,0,0,0.04)];
   }
   .label-caps {
-    @apply text-[11px] font-medium uppercase tracking-[0.08em] text-[hsl(var(--muted-foreground))];
+    /* Slightly looser tracking for editorial feel */
+    @apply text-[11px] font-medium uppercase tracking-[0.12em] text-[hsl(var(--muted-foreground))];
   }
   .focus-ring {
     @apply outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[hsl(var(--surface))];
+  }
+
+  /* Sticky top assembly — header + scenario bar + nav remain pinned on scroll */
+  .top-stack {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: hsl(var(--surface));
+    backdrop-filter: saturate(180%) blur(10px);
+    -webkit-backdrop-filter: saturate(180%) blur(10px);
+    box-shadow: 0 1px 0 hsl(var(--border));
   }
 }
