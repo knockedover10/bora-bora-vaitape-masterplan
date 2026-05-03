@@ -61,11 +61,17 @@
     letter-spacing: -0.005em;
   }
 
-  /* Headlines & site title use a refined high-contrast serif */
-  h1, h2, h3, .font-display {
+  /* Editorial serif reserved for explicit .font-display only (site title + hero title).
+     All other headings inherit Inter Tight sans for a clean financial-analysis register. */
+  .font-display {
     font-family: 'Fraunces', 'Source Serif 4', Georgia, serif;
     font-feature-settings: "ss01" 1, "ss02" 1;
     letter-spacing: -0.015em;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: 'Inter Tight', 'Inter', ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.012em;
   }
 
   .num, table, .kpi-value {
