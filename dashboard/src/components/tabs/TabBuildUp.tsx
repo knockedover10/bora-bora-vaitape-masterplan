@@ -6,6 +6,7 @@ import type { ScenarioBundle } from "@/hooks/useScenarios";
 import type { ModelInputs } from "@/hooks/useModelInputs";
 import { useChartColors } from "@/hooks/useChartColors";
 import { SafeBarRect } from "@/components/SafeBarRect";
+import { DeltaChip } from "@/components/DeltaChip";
 import { inputs as anchors } from "@/data/model";
 
 interface Props {
@@ -179,20 +180,28 @@ export function TabBuildUp({ active, scenarios, inputs: m, isModified }: Props) 
               <Row
                 label="Average Daily Rate (ADR)"
                 values={fixedTrio.map((s) => fmtCurrency(s.adr ?? 0))}
+                rawValues={fixedTrio.map((s) => s.adr ?? 0)}
+                deltaFormat="currency"
               />
               <Row
                 label="Occupancy"
                 values={fixedTrio.map((s) => fmtPercent(s.occ ?? 0, 0))}
+                rawValues={fixedTrio.map((s) => s.occ ?? 0)}
+                deltaFormat="pct_points"
               />
               <Row
                 label="Revenue Per Available Room (RevPAR)"
                 values={fixedTrio.map((s) => fmtCurrency(s.revpar ?? 0))}
+                rawValues={fixedTrio.map((s) => s.revpar ?? 0)}
+                deltaFormat="currency"
               />
               <Row
                 label="Total Revenue"
                 values={fixedTrio.map((s) =>
                   fmtCurrency(s.total_revenue ?? 0, { compact: true })
                 )}
+                rawValues={fixedTrio.map((s) => s.total_revenue ?? 0)}
+                deltaFormat="currency"
                 bold
               />
               <Row
@@ -200,26 +209,37 @@ export function TabBuildUp({ active, scenarios, inputs: m, isModified }: Props) 
                 values={fixedTrio.map((s) =>
                   fmtCurrency(-(s.total_revenue ?? 0) * m.opexRatio, { compact: true })
                 )}
+                rawValues={fixedTrio.map((s) => -(s.total_revenue ?? 0) * m.opexRatio)}
+                deltaFormat="currency"
+                directionGood="up"
                 muted
               />
               <Row
                 label="Gross Operating Profit (GOP)"
                 values={fixedTrio.map((s) => fmtCurrency(s.gop ?? 0, { compact: true }))}
+                rawValues={fixedTrio.map((s) => s.gop ?? 0)}
+                deltaFormat="currency"
                 bold
               />
               <Row
                 label="GOP Margin"
                 values={fixedTrio.map((s) => fmtPercent(s.gop_margin ?? 0, 1))}
+                rawValues={fixedTrio.map((s) => s.gop_margin ?? 0)}
+                deltaFormat="pct_points"
                 muted
               />
               <Row
                 label="Earnings Before Interest, Tax, Depreciation And Amortisation (EBITDA)"
                 values={fixedTrio.map((s) => fmtCurrency(s.ebitda ?? 0, { compact: true }))}
+                rawValues={fixedTrio.map((s) => s.ebitda ?? 0)}
+                deltaFormat="currency"
                 bold
               />
               <Row
                 label="Net Operating Income (NOI)"
                 values={fixedTrio.map((s) => fmtCurrency(s.noi ?? 0))}
+                rawValues={fixedTrio.map((s) => s.noi ?? 0)}
+                deltaFormat="currency"
                 emphasised
               />
               <Row
@@ -227,10 +247,14 @@ export function TabBuildUp({ active, scenarios, inputs: m, isModified }: Props) 
                 values={fixedTrio.map((s) =>
                   fmtCurrency(s.asset_value ?? 0, { compact: true })
                 )}
+                rawValues={fixedTrio.map((s) => s.asset_value ?? 0)}
+                deltaFormat="currency"
               />
               <Row
                 label="Development Yield"
                 values={fixedTrio.map((s) => fmtPercent(s.dev_yield ?? 0, 2))}
+                rawValues={fixedTrio.map((s) => s.dev_yield ?? 0)}
+                deltaFormat="pct_points"
               />
             </tbody>
           </table>
@@ -314,16 +338,28 @@ export function TabBuildUp({ active, scenarios, inputs: m, isModified }: Props) 
 function Row({
   label,
   values,
+  rawValues,
+  deltaFormat,
+  directionGood,
   bold,
   muted,
   emphasised,
 }: {
   label: string;
   values: string[];
+  /** Raw numeric values aligned to `values` for delta calculation. Order: [Base, Upside, Stress] (matches fixedTrio.) */
+  rawValues?: number[];
+  /** Format used for the DeltaChip. */
+  deltaFormat?: "currency" | "percent" | "pct_points" | "number";
+  /** Whether “up” is the desirable direction (default “up”). Use “down” for cost rows. */
+  directionGood?: "up" | "down";
   bold?: boolean;
   muted?: boolean;
   emphasised?: boolean;
 }) {
+  // fixedTrio order is [base, upside, stress] — base is index 0.
+  const baseValue = rawValues?.[0];
+  const showDeltas = rawValues !== undefined && deltaFormat !== undefined && baseValue !== undefined;
   return (
     <tr className="border-t border-[hsl(var(--border))]">
       <td
@@ -352,7 +388,17 @@ function Row({
               : ""
           }`}
         >
-          {v}
+          <span className="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
+            <span>{v}</span>
+            {showDeltas && i > 0 && rawValues![i] !== undefined ? (
+              <DeltaChip
+                value={rawValues![i]!}
+                base={baseValue!}
+                format={deltaFormat!}
+                directionGood={directionGood ?? "up"}
+              />
+            ) : null}
+          </span>
         </td>
       ))}
     </tr>

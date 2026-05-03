@@ -13,6 +13,87 @@ import { DefiscPanel } from "@/components/DefiscPanel";
 import { RicsPanel } from "@/components/RicsPanel";
 import { CompBenchmarks } from "@/components/CompBenchmarks";
 
+function RenovationCycleCard() {
+  const rows = [
+    {
+      label: "Upside",
+      cycle: "10 Years",
+      pct: "10% Of Build Cost",
+      rationale:
+        "Brand maintained at high level on a longer cycle; first major refurbishment lands outside the 10-year hold horizon, so the dip never appears in the chart.",
+    },
+    {
+      label: "Base",
+      cycle: "8 Years",
+      pct: "12% Of Build Cost",
+      rationale:
+        "Industry-convention midpoint per the HVS Hotel Investment Analysis 12th edition (2021) and RICS Red Book Global Standards 2024 — typical refurbishment intensity for ultra-luxury overwater resorts. Drives the visible Year 8 dip in the cash flow chart.",
+    },
+    {
+      label: "Stress",
+      cycle: "7 Years",
+      pct: "14% Of Build Cost",
+      rationale:
+        "Faster wear and higher remediation cost reflecting cyclone-zone exposure and a more cautious operator stance. Refurbishment lands inside the hold period and reduces terminal value.",
+    },
+  ];
+
+  return (
+    <div className="card-base p-5">
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-[16px] font-semibold tracking-tight">
+          Renovation Cycle — Why The Cash Flow Chart Dips
+        </h3>
+        <span className="text-[12px] text-[hsl(var(--muted-foreground))]">
+          HVS 7–10 Year Convention · Per-Scenario Input
+        </span>
+      </div>
+      <p className="mb-3 text-[13.5px] leading-relaxed">
+        Ultra-luxury hotels do not maintain peak rate and occupancy without periodic
+        soft-goods and case-goods refurbishment. The HVS Hotel Investment Analysis
+        12th edition (2021) and the RICS Red Book Global Standards 2024 both treat
+        a 7–10 year refurbishment cycle as the institutional norm; Aman, Four
+        Seasons and Cheval Blanc precedent across French Polynesia and the
+        Maldives confirms refurbishment capex of 10–15% of original build cost as
+        typical for overwater resort product. The chart dip in Year 8 (Base) and
+        Year 7 (Stress) is this scheduled refurbishment capex hitting the operating
+        cash flow.
+      </p>
+      <div className="-mx-2 overflow-x-auto">
+        <table className="w-full min-w-[560px] text-[13px] num">
+          <thead>
+            <tr className="text-left">
+              <th className="px-3 py-2 label-caps">Scenario</th>
+              <th className="px-3 py-2 label-caps text-right">Cycle</th>
+              <th className="px-3 py-2 label-caps text-right">Capex Intensity</th>
+              <th className="px-3 py-2 label-caps">Rationale</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.label} className="border-t border-[hsl(var(--border))]">
+                <td className="px-3 py-2.5 font-medium">{r.label}</td>
+                <td className="px-3 py-2.5 text-right font-semibold">{r.cycle}</td>
+                <td className="px-3 py-2.5 text-right font-semibold">{r.pct}</td>
+                <td className="px-3 py-2.5 text-[hsl(var(--muted-foreground))] text-[12.5px] leading-relaxed">
+                  {r.rationale}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-3 text-[11.5px] text-[hsl(var(--muted-foreground))]">
+        Sources: HVS Hotel Investment Analysis, 12th edition (2021) · RICS Red
+        Book Global Standards 2024 · ISHC Capital Expenditures in the Hotel
+        Industry, 5th edition. Per-scenario values are driven from the OPERATING
+        SCENARIO SWITCHER block in Hotel_DCF_Sensitivity_Model_v2.xlsx (Inputs
+        sheet, rows 45–51) and exported to scenarios.json.
+      </p>
+    </div>
+  );
+}
+
 export function TabAppendix() {
   // Group inputs
   const grouped = inputsTable.reduce<Record<string, typeof inputsTable>>((acc, row) => {
@@ -191,6 +272,8 @@ export function TabAppendix() {
           ))}
         </ul>
       </div>
+
+      <RenovationCycleCard />
 
       <CompBenchmarks />
 

@@ -1,5 +1,6 @@
 import { DcfLineChart } from "@/components/DcfLineChart";
 import { IrrBarChart } from "@/components/IrrBarChart";
+import { DeltaChip } from "@/components/DeltaChip";
 import { fmtCurrency, fmtPercent } from "@/lib/utils";
 import type { ScenarioBundle } from "@/hooks/useScenarios";
 import type { ModelInputs } from "@/hooks/useModelInputs";
@@ -62,43 +63,84 @@ export function TabReturns({ scenarios, inputs: m, isModified }: Props) {
               </tr>
             </thead>
             <tbody>
-              {scenarios.map((s) => (
-                <tr key={s.key} className="border-t border-[hsl(var(--border))]">
-                  <td className="px-3 py-2.5 font-medium">{s.label}</td>
-                  <td className="px-3 py-2.5 text-right font-semibold">
-                    {s.irr12yr === null || !Number.isFinite(s.irr12yr)
-                      ? "—"
-                      : fmtPercent(s.irr12yr, 2)}
-                  </td>
-                  <td
-                    className={`px-3 py-2.5 text-right font-semibold ${
-                      (s.npv7 ?? 0) > 0
-                        ? "text-[hsl(var(--success))]"
-                        : "text-[hsl(var(--danger))]"
-                    }`}
-                  >
-                    {fmtCurrency(s.npv7 ?? 0, { compact: true })}
-                  </td>
-                  <td
-                    className={`px-3 py-2.5 text-right font-semibold ${
-                      (s.npv9 ?? 0) > 0
-                        ? "text-[hsl(var(--success))]"
-                        : "text-[hsl(var(--warning))]"
-                    }`}
-                  >
-                    {fmtCurrency(s.npv9 ?? 0, { compact: true })}
-                  </td>
-                  <td
-                    className={`px-3 py-2.5 text-right font-semibold ${
-                      (s.npv11 ?? 0) > 0
-                        ? "text-[hsl(var(--success))]"
-                        : "text-[hsl(var(--danger))]"
-                    }`}
-                  >
-                    {fmtCurrency(s.npv11 ?? 0, { compact: true })}
-                  </td>
-                </tr>
-              ))}
+              {scenarios.map((s) => {
+                const isBase = s.key === "base";
+                return (
+                  <tr key={s.key} className="border-t border-[hsl(var(--border))]">
+                    <td className="px-3 py-2.5 font-medium">{s.label}</td>
+                    <td className="px-3 py-2.5 text-right font-semibold">
+                      <div className="flex items-center justify-end gap-2">
+                        <span>
+                          {s.irr12yr === null || !Number.isFinite(s.irr12yr)
+                            ? "—"
+                            : fmtPercent(s.irr12yr, 2)}
+                        </span>
+                        {!isBase && Number.isFinite(s.irr12yr) && Number.isFinite(base?.irr12yr ?? NaN) && (
+                          <DeltaChip
+                            value={s.irr12yr as number}
+                            base={base!.irr12yr as number}
+                            format="pct_points"
+                          />
+                        )}
+                      </div>
+                    </td>
+                    <td
+                      className={`px-3 py-2.5 text-right font-semibold ${
+                        (s.npv7 ?? 0) > 0
+                          ? "text-[hsl(var(--success))]"
+                          : "text-[hsl(var(--danger))]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-end gap-2">
+                        <span>{fmtCurrency(s.npv7 ?? 0, { compact: true })}</span>
+                        {!isBase && (
+                          <DeltaChip
+                            value={s.npv7 ?? 0}
+                            base={base?.npv7 ?? 0}
+                            format="currency"
+                          />
+                        )}
+                      </div>
+                    </td>
+                    <td
+                      className={`px-3 py-2.5 text-right font-semibold ${
+                        (s.npv9 ?? 0) > 0
+                          ? "text-[hsl(var(--success))]"
+                          : "text-[hsl(var(--warning))]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-end gap-2">
+                        <span>{fmtCurrency(s.npv9 ?? 0, { compact: true })}</span>
+                        {!isBase && (
+                          <DeltaChip
+                            value={s.npv9 ?? 0}
+                            base={base?.npv9 ?? 0}
+                            format="currency"
+                          />
+                        )}
+                      </div>
+                    </td>
+                    <td
+                      className={`px-3 py-2.5 text-right font-semibold ${
+                        (s.npv11 ?? 0) > 0
+                          ? "text-[hsl(var(--success))]"
+                          : "text-[hsl(var(--danger))]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-end gap-2">
+                        <span>{fmtCurrency(s.npv11 ?? 0, { compact: true })}</span>
+                        {!isBase && (
+                          <DeltaChip
+                            value={s.npv11 ?? 0}
+                            base={base?.npv11 ?? 0}
+                            format="currency"
+                          />
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
