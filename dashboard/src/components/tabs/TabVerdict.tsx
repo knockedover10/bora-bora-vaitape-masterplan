@@ -71,6 +71,28 @@ export function TabVerdict({ active, scenarios, inputs: m, isModified, onJumpToA
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Hero banner ------------------------------------------------------- */}
+      <figure className="relative overflow-hidden rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted))]">
+        <div className="aspect-[21/9] w-full">
+          <img
+            src={`${import.meta.env.BASE_URL}img/hero.jpg`}
+            alt="Proposed luxury overwater resort, Vaitape, Bora Bora — golden hour aerial concept"
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover"
+          />
+        </div>
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
+        <figcaption className="absolute inset-x-0 bottom-0 flex flex-col gap-1 p-5 sm:p-7">
+          <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/75 sm:text-[11px]">
+            Vaitape, Bora Bora &middot; Concept Render
+          </span>
+          <h1 className="font-display text-[22px] font-medium leading-tight tracking-tight text-white sm:text-[28px] lg:text-[32px]">
+            Luxury Overwater Resort &mdash; Investment Verdict
+          </h1>
+        </figcaption>
+      </figure>
+
       {/* Headline ---------------------------------------------------------- */}
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-[20px] font-semibold tracking-tight sm:text-[22px]">Headline Verdict</h2>
