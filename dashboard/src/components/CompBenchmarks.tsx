@@ -1,11 +1,12 @@
 /**
  * CompBenchmarks — luxury / ultra-luxury island resort competitive set.
  *
- * Tier 1: Bora Bora incumbents (lead-in OW villa nightly rates)
+ * Tier 1: Bora Bora incumbents (published ADR ranges)
  * Tier 2: French Polynesia regional (Tetiaroa, Taha'a)
  * Tier 3: Global ultra-luxury island benchmarks for the 35-key tier
  *
- * All ADRs are publicly published lead-in rates as of late 2025 / early 2026.
+ * Tier 1 ADRs match the source-deck published ranges (low-season lead-in to
+ * peak-season top suite). Tier 2 and 3 use the same range convention.
  * Citations link to original rate sheets, agent partner sites, and travel
  * publications. URLs are inline so the user can audit each figure.
  */
@@ -17,10 +18,10 @@ export function CompBenchmarks() {
           Average Daily Rate (ADR) Benchmark — Comparable Set
         </h3>
         <p className="mt-1 text-[13px] text-[hsl(var(--muted-foreground))]">
-          Lead-in overwater villa or signature suite nightly rate. Sourced from
-          published rate cards, partner agent sites and travel-press reviews
-          (late 2025 – early 2026). Tier 1 anchors local pricing; Tier 3 sets
-          the ceiling for true 35-key ultra-luxury pricing power.
+          Published ADR ranges (low-season lead-in to peak-season top suite).
+          Sourced from rate cards, partner agent sites and travel-press reviews.
+          Tier 1 anchors local pricing; Tier 3 sets the ceiling for true 35-key
+          ultra-luxury pricing power.
         </p>
       </div>
 
@@ -48,7 +49,7 @@ export function CompBenchmarks() {
               location="Bora Bora (Motu Toopua)"
               keys={114}
               density="Very High"
-              adr="$1,239"
+              adr="$1,200–4,000+"
               source={{ name: "Hotels.com", url: "https://www.hotels.com/ho645426/conrad-bora-bora-nui-bora-bora-french-polynesia/" }}
             />
             <CompRow
@@ -56,7 +57,7 @@ export function CompBenchmarks() {
               location="Bora Bora (Motu Tehotu)"
               keys={100}
               density="High"
-              adr="$2,500–3,000"
+              adr="$1,800–6,000+"
               source={{ name: "fourseasons.com", url: "https://www.fourseasons.com/borabora/accommodations/" }}
             />
             <CompRow
@@ -64,7 +65,7 @@ export function CompBenchmarks() {
               location="Bora Bora (Motu Ome'e)"
               keys={90}
               density="High"
-              adr="$2,100"
+              adr="$1,200–8,000+"
               source={{ name: "ILX Travel rate sheet", url: "https://www.ilxtravel.com/st-regis-bora-bora-prices/" }}
             />
             <CompRow
@@ -72,7 +73,7 @@ export function CompBenchmarks() {
               location="Bora Bora (Motu Piti Aau)"
               keys={84}
               density="High"
-              adr="$1,600"
+              adr="$700–2,000"
               source={{ name: "thalasso.intercontinental.com", url: "https://thalasso.intercontinental.com/overwater-villas-suites" }}
             />
             <CompRow
@@ -80,7 +81,7 @@ export function CompBenchmarks() {
               location="Bora Bora (Motu Tevairoa)"
               keys={108}
               density="Very High"
-              adr="$741–1,631"
+              adr="$1,300–2,500"
               source={{ name: "Kayak", url: "https://www.kayak.com/Vaitape-Hotels-Le-Bora-Bora-by-Pearl-Resorts.286970.ksp" }}
             />
 
@@ -95,7 +96,7 @@ export function CompBenchmarks() {
               location="Tetiaroa Atoll"
               keys={35}
               density="Very Low"
-              adr="$4,300–6,400"
+              adr="$4,800–5,800+"
               source={{ name: "Brando 2025-26 rate card", url: "https://www.calameo.com/books/004500545ad47cb15cb60" }}
               highlight
             />
@@ -104,8 +105,8 @@ export function CompBenchmarks() {
               location="Taha'a (Motu Tautau)"
               keys={60}
               density="Low"
-              adr="$1,200–1,400"
-              source={{ name: "letahaa.com", url: "https://www.letahaa.com" }}
+              adr="$1,300–4,100+"
+              source={{ name: "Moana Voyages", url: "https://www.moanavoyages.com/en/hotels/le-tahaa-by-pearl-resorts/" }}
             />
 
             {/* Tier 3 — Global ultra-luxury 35-key tier */}
@@ -160,16 +161,19 @@ export function CompBenchmarks() {
 
       <div className="mt-4 rounded-md border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--surface-alt))] p-3 text-[12.5px] leading-relaxed text-[hsl(var(--muted-foreground))]">
         <span className="font-semibold text-[hsl(var(--foreground))]">
-          Calibration note:
+          Scenario calibration:
         </span>{" "}
         Vaitape (35-key, sustainable, town-adjacent) is benchmarked against The
-        Brando ($4,300 lead-in) with a 25% accessibility discount applied for
-        the off-motu town location, anchoring the Base ADR at $4,200. This sits
-        below Amanyara's blended high-season rate and well below Necker / North
-        Island, which represent the upper bound of true sub-50-key pricing
-        power. The Upside ADR of $5,000 mirrors The Brando high-season rate;
-        the Stress ADR of $3,000 floors the model at Conrad Bora Bora Nui's
-        Premium Suite tier. See the{" "}
+        Brando peak-season rates with an accessibility discount applied for the
+        off-motu town location.{" "}
+        <span className="font-semibold text-[hsl(var(--foreground))]">Base</span>{" "}
+        ADR is anchored at $4,200, sitting below Amanyara's blended high-season
+        rate and well below Necker / North Island.{" "}
+        <span className="font-semibold text-[hsl(var(--foreground))]">Upside</span>{" "}
+        ADR of $5,000 mirrors The Brando high-season top range; the{" "}
+        <span className="font-semibold text-[hsl(var(--foreground))]">Stress</span>{" "}
+        ADR of $3,000 floors the model at the Conrad Bora Bora Nui Premium
+        Suite tier. See the{" "}
         <a
           href="https://www.linkedin.com/posts/jpfelix_a-50-key-ultra-luxury-resort-is-a-better-activity-7446829085814611970-bsS6"
           className="underline decoration-dotted underline-offset-2 hover:text-[hsl(var(--foreground))]"
