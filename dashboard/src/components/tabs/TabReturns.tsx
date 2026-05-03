@@ -1,27 +1,33 @@
 import { DcfLineChart } from "@/components/DcfLineChart";
 import { IrrBarChart } from "@/components/IrrBarChart";
 import { DeltaChip } from "@/components/DeltaChip";
-import { fmtCurrency, fmtPercent } from "@/lib/utils";
+import { ScenarioBadge } from "@/components/ScenarioBadge";
+import { fmtCurrency, fmtPercent, cn } from "@/lib/utils";
 import type { ScenarioBundle } from "@/hooks/useScenarios";
 import type { ModelInputs } from "@/hooks/useModelInputs";
 
 interface Props {
+  /** All currently-active scenarios (for IRR bar chart + NPV table). */
   scenarios: ScenarioBundle[];
+  /** The user-selected active scenario (drives the DCF line chart + highlighting). */
+  active: ScenarioBundle;
+  /** All scenarios including inactive ones (so we can always find Base for reference). */
+  allScenarios: ScenarioBundle[];
   inputs: ModelInputs;
   isModified: boolean;
 }
 
-export function TabReturns({ scenarios, inputs: m, isModified }: Props) {
-  // Get base and stress for the DCF chart (always render even if toggled off)
-  const base = scenarios.find((s) => s.key === "base");
-  const stress = scenarios.find((s) => s.key === "stress");
+export function TabReturns({ scenarios, active, allScenarios, inputs: m, isModified }: Props) {
+  // Always pull Base from the full list so the DCF reference + NPV deltas
+  // stay anchored even when the user toggles Base off in the scenario bar.
+  const base = allScenarios.find((s) => s.key === "base") ?? active;
 
   return (
     <div className="flex flex-col gap-6">
       <div className="card-base p-5">
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="text-[16px] font-semibold tracking-tight">
-            {m.holdYears}-Year Cash Flow — Base &amp; Stress
+            {m.holdYears}-Year Cash Flow — {active.label} vs Base
             {isModified && (
               <span
                 title="Recalculated From Your Inputs"
@@ -29,28 +35,45 @@ export function TabReturns({ scenarios, inputs: m, isModified }: Props) {
               />
             )}
           </h3>
-          <span className="text-[12px] text-[hsl(var(--muted-foreground))] num">
-            Year 0–Year 2 Construction · Year 3–Year 5 Ramp · Year 6+ Stabilised · Year {m.holdYears} Includes Terminal Value
-          </span>
+          <ScenarioBadge
+            activeKey={active.key}
+            activeLabel={active.label}
+            caption={`IRR ${fmtPercent(active.irr12yr ?? 0, 1)} · NPV @ 7% ${fmtCurrency(active.npv7 ?? 0, { compact: true })}`}
+          />
         </div>
-        {base && stress ? (
-          <DcfLineChart base={base} stress={stress} inputs={m} />
-        ) : (
-          <div className="text-sm text-[hsl(var(--muted-foreground))]">No Data</div>
-        )}
+        <p className="mb-3 text-[12.5px] text-[hsl(var(--muted-foreground))]">
+          Solid line = {active.label} cash flows. Dashed grey line = Base reference (always shown so you can
+          see how the scenario you picked deviates from Base year-by-year). Year {m.holdYears} bar = terminal
+          (exit) value.
+        </p>
+        <DcfLineChart active={active} base={base} inputs={m} />
       </div>
 
       <div className="card-base p-5">
-        <h3 className="mb-3 text-[16px] font-semibold tracking-tight">
-          {m.holdYears}-Year Unleveraged Internal Rate Of Return (IRR) — By Active Scenario
-        </h3>
-        <IrrBarChart scenarios={scenarios} />
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="text-[16px] font-semibold tracking-tight">
+            {m.holdYears}-Year Unleveraged Internal Rate Of Return (IRR) — All Active Scenarios
+          </h3>
+          <ScenarioBadge
+            activeKey={active.key}
+            activeLabel={active.label}
+            caption="Outlined Bar"
+          />
+        </div>
+        <IrrBarChart scenarios={scenarios} activeKey={active.key} />
       </div>
 
       <div className="card-base p-5">
-        <h3 className="mb-3 text-[16px] font-semibold tracking-tight">
-          Net Present Value (NPV) At Three Discount Rates
-        </h3>
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="text-[16px] font-semibold tracking-tight">
+            Net Present Value (NPV) At Three Discount Rates
+          </h3>
+          <ScenarioBadge
+            activeKey={active.key}
+            activeLabel={active.label}
+            caption="Highlighted Row"
+          />
+        </div>
         <div className="-mx-2 overflow-x-auto">
           <table className="w-full min-w-[640px] text-[13px] num">
             <thead>
@@ -65,9 +88,31 @@ export function TabReturns({ scenarios, inputs: m, isModified }: Props) {
             <tbody>
               {scenarios.map((s) => {
                 const isBase = s.key === "base";
+                const isActive = s.key === active.key;
                 return (
-                  <tr key={s.key} className="border-t border-[hsl(var(--border))]">
-                    <td className="px-3 py-2.5 font-medium">{s.label}</td>
+                  <tr
+                    key={s.key}
+                    className={cn(
+                      "border-t border-[hsl(var(--border))]",
+                      isActive && "bg-[hsl(var(--accent-soft))]"
+                    )}
+                  >
+                    <td className="px-3 py-2.5 font-medium">
+                      <span className="inline-flex items-center gap-2">
+                        {isActive && (
+                          <span
+                            className="inline-block h-1.5 w-1.5 rounded-full bg-[hsl(var(--accent))]"
+                            aria-hidden
+                          />
+                        )}
+                        {s.label}
+                        {isActive && (
+                          <span className="rounded-full bg-[hsl(var(--accent))] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                            Active
+                          </span>
+                        )}
+                      </span>
+                    </td>
                     <td className="px-3 py-2.5 text-right font-semibold">
                       <div className="flex items-center justify-end gap-2">
                         <span>

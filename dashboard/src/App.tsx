@@ -139,9 +139,15 @@ export default function App() {
           <TabBuildUp active={active} scenarios={scenarios} inputs={inputs} isModified={isModified} />
         )}
         {tab === "returns" && (
-          <TabReturns scenarios={activeScenarios} inputs={inputs} isModified={isModified} />
+          <TabReturns
+            scenarios={activeScenarios}
+            active={active}
+            allScenarios={scenarios}
+            inputs={inputs}
+            isModified={isModified}
+          />
         )}
-        {tab === "sensitivities" && <TabSensitivities />}
+        {tab === "sensitivities" && <TabSensitivities active={active} />}
         {tab === "appendix" && <TabAppendix />}
       </main>
 

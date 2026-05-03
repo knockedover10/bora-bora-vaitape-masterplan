@@ -7,6 +7,7 @@ import type { ModelInputs } from "@/hooks/useModelInputs";
 import { useChartColors } from "@/hooks/useChartColors";
 import { SafeBarRect } from "@/components/SafeBarRect";
 import { DeltaChip } from "@/components/DeltaChip";
+import { ScenarioBadge } from "@/components/ScenarioBadge";
 import { inputs as anchors } from "@/data/model";
 
 interface Props {
@@ -53,21 +54,23 @@ export function TabBuildUp({ active, scenarios, inputs: m, isModified }: Props) 
   const stressS = scenarios.find((s) => s.key === "stress")!;
   const fixedTrio = [baseS, upsideS, stressS];
 
-  // Waterfall data — Base case decomposition into 6 horizontal bars
-  const baseTotalRev = baseS.total_revenue ?? 0;
-  const baseGop = baseS.gop ?? 0;
-  const baseEbitda = baseS.ebitda ?? 0;
-  const baseNoi = baseS.noi ?? 0;
-  const baseOpEx = baseTotalRev * m.opexRatio;
-  const baseFeesAndFfe = baseGop - baseEbitda + baseTotalRev * m.ffeReserve;
+  // Waterfall data — Active scenario decomposition into 6 horizontal bars.
+  // Reads from `active` (not Base) so the bars rebuild when the operator
+  // toggles Upside / Stress / a custom scenario in the scenario bar.
+  const wfTotalRev = active.total_revenue ?? 0;
+  const wfGop = active.gop ?? 0;
+  const wfEbitda = active.ebitda ?? 0;
+  const wfNoi = active.noi ?? 0;
+  const wfOpEx = wfTotalRev * m.opexRatio;
+  const wfFeesAndFfe = wfGop - wfEbitda + wfTotalRev * m.ffeReserve;
 
   const waterfall = [
-    { name: "Total Revenue", value: baseTotalRev, color: c["--accent"], flow: "in" as const },
-    { name: "Operating Expenses (Leakage)", value: baseOpEx, color: c["--negative"], flow: "out" as const },
-    { name: "Gross Operating Profit (GOP)", value: baseGop, color: c["--accent"], flow: "in" as const },
-    { name: "Management Fees + FF&E Reserve (Leakage)", value: baseFeesAndFfe, color: c["--negative"], flow: "out" as const },
-    { name: "Earnings Before Interest, Tax, Depreciation And Amortisation (EBITDA)", value: baseEbitda, color: c["--accent"], flow: "in" as const },
-    { name: "Net Operating Income (NOI)", value: baseNoi, color: c["--accent"], flow: "in" as const },
+    { name: "Total Revenue", value: wfTotalRev, color: c["--accent"], flow: "in" as const },
+    { name: "Operating Expenses (Leakage)", value: wfOpEx, color: c["--negative"], flow: "out" as const },
+    { name: "Gross Operating Profit (GOP)", value: wfGop, color: c["--accent"], flow: "in" as const },
+    { name: "Management Fees + FF&E Reserve (Leakage)", value: wfFeesAndFfe, color: c["--negative"], flow: "out" as const },
+    { name: "Earnings Before Interest, Tax, Depreciation And Amortisation (EBITDA)", value: wfEbitda, color: c["--accent"], flow: "in" as const },
+    { name: "Net Operating Income (NOI)", value: wfNoi, color: c["--accent"], flow: "in" as const },
   ];
 
   const costPerKey = m.totalDevCost / m.keys;
@@ -261,16 +264,21 @@ export function TabBuildUp({ active, scenarios, inputs: m, isModified }: Props) 
         </div>
       </div>
 
-      {/* NOI Waterfall — Base Case */}
+      {/* NOI Waterfall — Active Scenario */}
       <div className="card-base p-5">
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
           <h3 className="text-[16px] font-semibold tracking-tight">
-            Net Operating Income (NOI) Waterfall — Active Scenario
+            Net Operating Income (NOI) Waterfall — {active.label}
           </h3>
-          <span className="text-[12px] text-[hsl(var(--muted-foreground))] num">
-            Where The Money Goes — Revenue To NOI
-          </span>
+          <ScenarioBadge
+            activeKey={active.key}
+            activeLabel={active.label}
+            caption={`NOI ${fmtCurrency(wfNoi, { compact: true })}`}
+          />
         </div>
+        <p className="mb-3 text-[12.5px] text-[hsl(var(--muted-foreground))]">
+          Where The Money Goes &mdash; Revenue To NOI for the {active.label} scenario. Bars rebuild whenever you switch scenarios above.
+        </p>
         <div className="h-[360px] w-full">
           <ResponsiveContainer>
             <BarChart

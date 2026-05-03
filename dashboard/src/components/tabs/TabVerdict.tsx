@@ -1,5 +1,7 @@
-import { ArrowRight, Sparkles, Check, X, AlertTriangle } from "lucide-react";
-import { GateTile } from "@/components/GateTile";
+import { ArrowRight, Sparkles, Check, X, AlertTriangle, Info } from "lucide-react";
+import { KpiVerdictTile } from "@/components/KpiVerdictTile";
+import { ScenarioBadge } from "@/components/ScenarioBadge";
+import { DeltaChip } from "@/components/DeltaChip";
 import { fmtCurrency, fmtPercent, fmtBps, cn } from "@/lib/utils";
 import { inputs as anchors } from "@/data/model";
 import type { ScenarioBundle } from "@/hooks/useScenarios";
@@ -58,16 +60,26 @@ export function TabVerdict({ active, scenarios, inputs: m, isModified, onJumpToA
   const npvBasePass = npv7Base > 0;
   const npvStressPass = npv7Stress > 0;
 
-  // Active-scenario gate verdicts (kept beneath primary KPIs for the operator view)
-  const gate1: "PASS" | "FAIL" = (active.asset_value ?? 0) > m.totalDevCost ? "PASS" : "FAIL";
-  const gate2: "PASS" | "FAIL" | "MARGINAL" =
-    (active.irr12yr ?? 0) >= 0.08 && (active.npv7 ?? 0) > 0
-      ? "PASS"
-      : (active.npv7 ?? 0) > 0
-      ? "MARGINAL"
-      : "FAIL";
-  const gate3: "PASS" | "FAIL" | "MARGINAL" =
-    (active.yield_spread ?? 0) >= 0.01 ? "PASS" : (active.yield_spread ?? 0) >= 0 ? "MARGINAL" : "FAIL";
+  // Active-scenario verdicts — mirror the three Primary KPIs above so the
+  // operator sees the same metrics here, plus the cushion vs threshold.
+  const activeDevY = active.dev_yield ?? 0;
+  const activeSpread = active.yield_spread ?? 0;
+  const activeIrr = active.irr12yr ?? 0;
+  const activeNpv7 = active.npv7 ?? 0;
+
+  const kpi1Verdict: "PASS" | "FAIL" | "MARGINAL" =
+    activeDevY >= m.capRate ? "PASS" : activeDevY >= m.capRate * 0.9 ? "MARGINAL" : "FAIL";
+  const kpi2Verdict: "PASS" | "FAIL" | "MARGINAL" =
+    activeIrr >= 0.08 && activeIrr <= 0.12 ? "PASS"
+    : activeIrr >= 0.08 ? "PASS"   // higher than ceiling = still pass on the floor test
+    : activeIrr >= 0.06 ? "MARGINAL"
+    : "FAIL";
+  const kpi3Verdict: "PASS" | "FAIL" | "MARGINAL" =
+    activeNpv7 > 0 ? "PASS" : activeNpv7 > -5_000_000 ? "MARGINAL" : "FAIL";
+
+  const irrFloorBps = (activeIrr - 0.08) * 10000;
+  const npv11Active = active.npv11 ?? 0;
+  const avActive = active.asset_value ?? 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -139,101 +151,146 @@ export function TabVerdict({ active, scenarios, inputs: m, isModified, onJumpToA
         />
       </div>
 
-      {/* Supporting bands ------------------------------------------------- */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        {/* Capital-Archetype Calibration (NPV @ 11% PE hurdle) */}
-        <div className="card-base p-5">
-          <div className="label-caps mb-3 text-[hsl(var(--muted-foreground))]">
-            Capital-Archetype Calibration (Net Present Value @ 11% Private-Equity Hurdle)
-          </div>
-          <div className="grid grid-cols-2 gap-3 text-[13px]">
-            <div>
-              <div className="text-[hsl(var(--muted-foreground))]">Base</div>
-              <div className="num text-[15px] font-semibold">
-                {fmtCurrency(npv11Base, { compact: true, signed: true })}{" "}
-                <span
-                  className={cn(
-                    "ml-1 text-[12px] font-semibold",
-                    npv11Base > 0 ? "text-[hsl(var(--success))]" : "text-[hsl(var(--danger))]"
-                  )}
-                >
-                  {npv11Base > 0 ? "PASS" : "FAIL"}
-                </span>
-              </div>
-            </div>
-            <div>
-              <div className="text-[hsl(var(--muted-foreground))]">Stress Case</div>
-              <div className="num text-[15px] font-semibold">
-                {fmtCurrency(npv11Stress, { compact: true, signed: true })}{" "}
-                <span
-                  className={cn(
-                    "ml-1 text-[12px] font-semibold",
-                    npv11Stress > 0 ? "text-[hsl(var(--success))]" : "text-[hsl(var(--warning))]"
-                  )}
-                >
-                  {npv11Stress > 0 ? "PASS" : "FAIL"}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Supporting bands — Active-scenario reframings of the three KPIs above ----- */}
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-[18px] font-semibold tracking-tight">
+          KPI Cushion — {active.label} Scenario
+        </h3>
+        <ScenarioBadge
+          activeKey={active.key}
+          activeLabel={active.label}
+          caption="Reflects current scenario"
+        />
+      </div>
+      <p className="-mt-3 text-[13px] text-[hsl(var(--muted-foreground))]">
+        Each tile below restates the matching Primary KPI for the {active.label} scenario, then quantifies how much it clears
+        (or misses) the underwriting threshold. Use this to gauge headroom rather than just pass/fail.
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <KpiVerdictTile
+          kpiNumber={1}
+          title="Development Yield"
+          rule={`Threshold: ≥ ${fmtPercent(m.capRate, 2)} Cap Rate`}
+          verdict={kpi1Verdict}
+          activeValue={fmtPercent(activeDevY, 2)}
+          cushion={`${fmtBps(activeSpread)} above ${fmtPercent(m.capRate, 2)} cap-rate floor (asset value ${fmtCurrency(avActive, { compact: true })} vs ${fmtCurrency(m.totalDevCost, { compact: true })} build cost)`}
+        />
+        <KpiVerdictTile
+          kpiNumber={2}
+          title="Unleveraged IRR"
+          rule="Threshold: ≥ 8% Patient-Capital Floor"
+          verdict={kpi2Verdict}
+          activeValue={fmtPercent(activeIrr, 2)}
+          cushion={`${irrFloorBps >= 0 ? "+" : "−"}${Math.abs(irrFloorBps).toFixed(0)}bps vs 8% floor (12-year unleveraged DCF)`}
+        />
+        <KpiVerdictTile
+          kpiNumber={3}
+          title="NPV @ 7% (Patient)"
+          rule="Threshold: > $0 At Patient-Capital Rate"
+          verdict={kpi3Verdict}
+          activeValue={fmtCurrency(activeNpv7, { compact: true, signed: true })}
+          cushion={`${activeNpv7 > 0 ? "+" : "−"}${fmtCurrency(Math.abs(activeNpv7), { compact: true })} of value above the patient-capital break-even line`}
+        />
+      </div>
 
-        {/* Asset Value Surplus — KPI 1 reference */}
-        <div className="card-base p-5">
-          <div className="label-caps mb-3 text-[hsl(var(--muted-foreground))]">
-            Asset Value Surplus (Key Performance Indicator 1 Reference)
+      {/* Capital-archetype calibration — explained inline (Image 2 fix) ----------- */}
+      <div className="card-base p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <div>
+            <div className="label-caps text-[hsl(var(--muted-foreground))]">
+              Capital-Archetype Calibration — Private-Equity Stress Test
+            </div>
+            <div className="mt-1 text-[15px] font-semibold tracking-tight">
+              Would a private-equity (PE) buyer pay for this asset at their 11% hurdle?
+            </div>
           </div>
-          <dl className="space-y-1.5 text-[13px]">
-            <div className="flex items-baseline justify-between">
-              <dt className="text-[hsl(var(--muted-foreground))]">Implied Asset Value</dt>
-              <dd className="num font-semibold">
-                {fmtCurrency(avBase, { compact: true })} Base /{" "}
-                {fmtCurrency(avStress, { compact: true })} Stress
-              </dd>
-            </div>
-            <div className="flex items-baseline justify-between">
-              <dt className="text-[hsl(var(--muted-foreground))]">vs Total Development Cost</dt>
-              <dd className="num font-semibold">{fmtCurrency(m.totalDevCost, { compact: true })}</dd>
-            </div>
-            <div className="flex items-baseline justify-between border-t border-[hsl(var(--border))] pt-2">
-              <dt className="text-[hsl(var(--muted-foreground))]">Value-Creation Surplus</dt>
-              <dd className="num font-semibold text-[hsl(var(--accent))]">
-                {fmtCurrency(avBase - m.totalDevCost, { compact: true })} Base /{" "}
-                {fmtCurrency(avStress - m.totalDevCost, { compact: true })} Stress
-              </dd>
-            </div>
-          </dl>
+          <ScenarioBadge
+            activeKey={active.key}
+            activeLabel={active.label}
+            caption={`NPV @ 11% ${fmtCurrency(npv11Active, { compact: true, signed: true })}`}
+          />
+        </div>
+        <p className="mt-2 text-[12.5px] text-[hsl(var(--muted-foreground))] leading-relaxed">
+          <Info size={12} className="mr-1 inline-block align-[-1px] text-[hsl(var(--accent))]" />
+          Why this matters: 7% NPV (the patient-capital floor) is the appropriate hurdle for the family-office /
+          sovereign capital archetypes that fit a Bora Bora ultra-luxury asset. The 11% column tells the
+          counterfactual: at a typical mid-market PE hurdle, only the {active.label} scenario passing/failing
+          this test signals whether the deal can survive a hot-money exit.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3 text-[13px]">
+          <ArchetypeCell
+            label={`${active.label} (Active)`}
+            value={fmtCurrency(npv11Active, { compact: true, signed: true })}
+            verdict={npv11Active > 0 ? "PASS" : "FAIL"}
+            tone="accent"
+          />
+          <ArchetypeCell
+            label="Base Reference"
+            value={fmtCurrency(npv11Base, { compact: true, signed: true })}
+            verdict={npv11Base > 0 ? "PASS" : "FAIL"}
+          />
+          <ArchetypeCell
+            label="Stress Reference"
+            value={fmtCurrency(npv11Stress, { compact: true, signed: true })}
+            verdict={npv11Stress > 0 ? "PASS" : "FAIL"}
+          />
         </div>
       </div>
 
-      {/* Active-scenario viewer gates ------------------------------------ */}
-      <div>
-        <div className="label-caps mb-3 text-[hsl(var(--muted-foreground))]">
-          Active Scenario View — {active.label}
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <GateTile
-            gateNumber={1}
-            title="Asset Value > Build Cost"
-            rule={`Asset Value ≥ ${fmtCurrency(m.totalDevCost, { compact: true })} Development Cost (Income-Capitalisation)`}
-            verdict={gate1}
-            detail={`Asset Value ${fmtCurrency(active.asset_value ?? 0, { compact: true })} vs Cost ${fmtCurrency(m.totalDevCost, { compact: true })}`}
-          />
-          <GateTile
-            gateNumber={2}
-            title="Patient-Capital IRR & NPV"
-            rule="IRR 8–12% With NPV @ 7% > 0"
-            verdict={gate2}
-            detail={`IRR ${fmtPercent(active.irr12yr ?? 0, 2)} · NPV @ 7% ${fmtCurrency(active.npv7 ?? 0, { compact: true })}`}
-          />
-          <GateTile
-            gateNumber={3}
-            title="Yield-On-Cost Spread ≥ 100 basis points (bps)"
-            rule={`(Development Yield − ${fmtPercent(m.capRate, 2)}) ≥ 100 basis points`}
-            verdict={gate3}
-            detail={`${fmtBps(active.yield_spread ?? 0)} Above Cap Rate`}
+      {/* Asset value surplus — explained inline (Image 2 fix) -------------------- */}
+      <div className="card-base p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <div>
+            <div className="label-caps text-[hsl(var(--muted-foreground))]">
+              Asset-Value Surplus — Income-Capitalisation Sanity Check
+            </div>
+            <div className="mt-1 text-[15px] font-semibold tracking-tight">
+              Is the development creating value the day it stabilises?
+            </div>
+          </div>
+          <ScenarioBadge
+            activeKey={active.key}
+            activeLabel={active.label}
+            caption={`Surplus ${fmtCurrency(avActive - m.totalDevCost, { compact: true })}`}
           />
         </div>
+        <p className="mt-2 text-[12.5px] text-[hsl(var(--muted-foreground))] leading-relaxed">
+          <Info size={12} className="mr-1 inline-block align-[-1px] text-[hsl(var(--accent))]" />
+          Why this matters: this is the cross-check on KPI 1 (Development Yield). Capitalising stabilised NOI at
+          the {fmtPercent(m.capRate, 2)} exit cap rate gives the implied open-market asset value. Subtracting build cost
+          shows the immediate value-creation surplus (or deficit) on Day 1 of stabilisation — independent of the
+          full 12-year DCF.
+        </p>
+        <dl className="mt-3 grid gap-3 text-[13px] sm:grid-cols-3">
+          <div className="rounded-md border border-[hsl(var(--border))] p-3">
+            <dt className="text-[hsl(var(--muted-foreground))]">Implied Asset Value ({active.label})</dt>
+            <dd className="num mt-1 text-[18px] font-semibold">{fmtCurrency(avActive, { compact: true })}</dd>
+            <dd className="mt-0.5 text-[11.5px] text-[hsl(var(--muted-foreground))]">
+              NOI {fmtCurrency(active.noi ?? 0, { compact: true })} ÷ Cap Rate {fmtPercent(m.capRate, 2)}
+            </dd>
+          </div>
+          <div className="rounded-md border border-[hsl(var(--border))] p-3">
+            <dt className="text-[hsl(var(--muted-foreground))]">Total Development Cost</dt>
+            <dd className="num mt-1 text-[18px] font-semibold">{fmtCurrency(m.totalDevCost, { compact: true })}</dd>
+            <dd className="mt-0.5 text-[11.5px] text-[hsl(var(--muted-foreground))]">{m.keys} keys × {fmtCurrency(m.totalDevCost / m.keys, { compact: true })} per key</dd>
+          </div>
+          <div className={cn("rounded-md border p-3", avActive - m.totalDevCost >= 0 ? "border-[hsl(var(--success))/40%] bg-[hsl(var(--success))/8%]" : "border-[hsl(var(--danger))/40%] bg-[hsl(var(--danger))/8%]")}>
+            <dt className={cn("font-semibold", avActive - m.totalDevCost >= 0 ? "text-[hsl(var(--success))]" : "text-[hsl(var(--danger))]")}>
+              Value-Creation Surplus
+            </dt>
+            <dd className="num mt-1 text-[18px] font-semibold">
+              {fmtCurrency(avActive - m.totalDevCost, { compact: true, signed: true })}
+            </dd>
+            <dd className="mt-0.5 inline-flex items-center gap-1 text-[11.5px]">
+              <DeltaChip
+                value={avActive - m.totalDevCost}
+                base={avBase - m.totalDevCost}
+                format="currency"
+              />
+              <span className="text-[hsl(var(--muted-foreground))]">vs Base surplus</span>
+            </dd>
+          </div>
+        </dl>
       </div>
 
       {/* Patient-capital snapshot table */}
@@ -353,6 +410,50 @@ function PrimaryKpiTile({
         <span>{basePass ? "PASS" : "FAIL"}</span>
         <span className="opacity-70">/</span>
         <span>{stressPass ? "PASS" : "FAIL"}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================================
+   ArchetypeCell — Cell for the capital-archetype calibration band
+   ============================================================================ */
+function ArchetypeCell({
+  label,
+  value,
+  verdict,
+  tone,
+}: {
+  label: string;
+  value: string;
+  verdict: "PASS" | "FAIL";
+  tone?: "accent";
+}) {
+  const passing = verdict === "PASS";
+  return (
+    <div
+      className={cn(
+        "rounded-md border p-3",
+        tone === "accent"
+          ? "border-[hsl(var(--accent))/40%] bg-[hsl(var(--accent-soft))]"
+          : "border-[hsl(var(--border))]"
+      )}
+    >
+      <div className={cn("text-[12px] uppercase tracking-wide font-medium", tone === "accent" ? "text-[hsl(var(--accent))]" : "text-[hsl(var(--muted-foreground))]")}>
+        {label}
+      </div>
+      <div className="num mt-1 inline-flex items-baseline gap-2 text-[18px] font-semibold">
+        <span>{value}</span>
+        <span
+          className={cn(
+            "rounded-full px-1.5 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide",
+            passing
+              ? "bg-[hsl(var(--success))/15%] text-[hsl(var(--success))]"
+              : "bg-[hsl(var(--danger))/15%] text-[hsl(var(--danger))]"
+          )}
+        >
+          {verdict}
+        </span>
       </div>
     </div>
   );

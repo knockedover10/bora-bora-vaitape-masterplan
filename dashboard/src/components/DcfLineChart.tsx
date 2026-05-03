@@ -7,38 +7,51 @@ import type { ModelInputs } from "@/hooks/useModelInputs";
 import { useChartColors } from "@/hooks/useChartColors";
 
 interface Props {
+  /** Active scenario — drives the foreground line + terminal bar. */
+  active: ScenarioBundle;
+  /** Base scenario — drawn as a faint reference line so deltas are visible. */
   base: ScenarioBundle;
-  stress: ScenarioBundle;
   inputs: ModelInputs;
 }
 
 /**
  * Live-recomputed DCF line chart using the cashflows on each scenario bundle.
+ *
+ * Foreground series = the ACTIVE scenario the user picked from the scenario bar.
+ * Background series = Base, drawn faint, as a reference benchmark so the viewer
+ * can see how Upside / Stress deviates from the Base path year-by-year.
+ *
  * Splits terminal value at exit year so the operating-cashflow line isn't
  * crushed by the terminal spike.
  */
-export function DcfLineChart({ base, stress, inputs: m }: Props) {
+export function DcfLineChart({ active, base, inputs: m }: Props) {
   const c = useChartColors();
+  const activeCf = active.cashflows ?? [];
   const baseCf = base.cashflows ?? [];
-  const stressCf = stress.cashflows ?? [];
   const exit = m.holdYears;
 
   const reverseNoi = (cfExit: number) =>
     cfExit / (1 + (1 + m.noiGrowth) / m.capRate);
 
+  const activeNoiExit = exit >= 3 ? reverseNoi(activeCf[exit] ?? 0) : 0;
   const baseNoiExit = exit >= 3 ? reverseNoi(baseCf[exit] ?? 0) : 0;
-  const stressNoiExit = exit >= 3 ? reverseNoi(stressCf[exit] ?? 0) : 0;
+  const activeTerminal = (activeCf[exit] ?? 0) - activeNoiExit;
   const baseTerminal = (baseCf[exit] ?? 0) - baseNoiExit;
-  const stressTerminal = (stressCf[exit] ?? 0) - stressNoiExit;
 
-  const length = Math.max(baseCf.length, stressCf.length);
+  const length = Math.max(activeCf.length, baseCf.length);
   const data = Array.from({ length }, (_, i) => ({
     year: `Y${i}`,
+    active: i === exit ? activeNoiExit : activeCf[i] ?? 0,
     base: i === exit ? baseNoiExit : baseCf[i] ?? 0,
-    stress: i === exit ? stressNoiExit : stressCf[i] ?? 0,
+    activeTerminal: i === exit ? activeTerminal : 0,
     baseTerminal: i === exit ? baseTerminal : 0,
-    stressTerminal: i === exit ? stressTerminal : 0,
   }));
+
+  const isActiveBase = active.key === "base";
+  const activeColor =
+    active.key === "stress" ? c["--negative"]
+    : active.key === "upside" ? c["--positive"]
+    : c["--accent"];
 
   return (
     <div className="h-[340px] w-full">
@@ -64,10 +77,15 @@ export function DcfLineChart({ base, stress, inputs: m }: Props) {
               fontSize: 12,
               borderRadius: 8,
             }}
-            formatter={(v: number, key) => [
-              fmtCurrency(v, { compact: true }),
-              key === "base" ? "Base" : key === "stress" ? "Stress" : (key as string),
-            ]}
+            formatter={(v: number, key) => {
+              const labelMap: Record<string, string> = {
+                active: `${active.label} — Operating Cash Flow`,
+                base: `Base — Operating Cash Flow (Reference)`,
+                activeTerminal: `${active.label} — Terminal Value`,
+                baseTerminal: `Base — Terminal Value (Reference)`,
+              };
+              return [fmtCurrency(v, { compact: true }), labelMap[key as string] ?? (key as string)];
+            }}
           />
           <Legend
             verticalAlign="top"
@@ -75,45 +93,52 @@ export function DcfLineChart({ base, stress, inputs: m }: Props) {
             iconType="circle"
             wrapperStyle={{ fontSize: 12, color: c["--foreground"] }}
             formatter={(v) => {
-              if (v === "base") return "Base — Operating Cash Flow";
-              if (v === "stress") return "Stress — Operating Cash Flow";
-              if (v === "baseTerminal") return "Base — Terminal Value";
-              if (v === "stressTerminal") return "Stress — Terminal Value";
+              if (v === "active") return `${active.label} — Operating Cash Flow`;
+              if (v === "base") return "Base — Reference";
+              if (v === "activeTerminal") return `${active.label} — Terminal Value`;
+              if (v === "baseTerminal") return "Base — Terminal (Reference)";
               return v as string;
             }}
           />
+          {/* Base reference bar — only shown when the active scenario is NOT base */}
+          {!isActiveBase && (
+            <Bar
+              dataKey="baseTerminal"
+              name="baseTerminal"
+              fill={c["--muted-foreground"]}
+              fillOpacity={0.25}
+              barSize={14}
+              stackId="t-base"
+            />
+          )}
           <Bar
-            dataKey="baseTerminal"
-            name="baseTerminal"
-            fill={c["--accent"]}
-            fillOpacity={0.45}
+            dataKey="activeTerminal"
+            name="activeTerminal"
+            fill={activeColor}
+            fillOpacity={0.5}
             barSize={18}
-            stackId="t"
+            stackId="t-active"
           />
-          <Bar
-            dataKey="stressTerminal"
-            name="stressTerminal"
-            fill={c["--negative"]}
-            fillOpacity={0.45}
-            barSize={18}
-            stackId="t2"
-          />
+          {/* Base reference line — only shown when the active scenario is NOT base */}
+          {!isActiveBase && (
+            <Line
+              type="monotone"
+              dataKey="base"
+              stroke={c["--muted-foreground"]}
+              strokeWidth={1.75}
+              strokeDasharray="3 3"
+              strokeOpacity={0.7}
+              dot={false}
+              activeDot={{ r: 3 }}
+            />
+          )}
           <Line
             type="monotone"
-            dataKey="base"
-            stroke={c["--accent"]}
-            strokeWidth={2.5}
-            dot={{ r: 3, stroke: c["--accent"], fill: c["--surface-raised"] }}
-            activeDot={{ r: 5 }}
-          />
-          <Line
-            type="monotone"
-            dataKey="stress"
-            stroke={c["--negative"]}
-            strokeWidth={2.5}
-            strokeDasharray="5 4"
-            dot={{ r: 3, stroke: c["--negative"], fill: c["--surface-raised"] }}
-            activeDot={{ r: 5 }}
+            dataKey="active"
+            stroke={activeColor}
+            strokeWidth={2.75}
+            dot={{ r: 3.5, stroke: activeColor, fill: c["--surface-raised"] }}
+            activeDot={{ r: 5.5 }}
           />
         </ComposedChart>
       </ResponsiveContainer>
