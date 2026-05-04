@@ -88,7 +88,7 @@ export function TabVerdict({ active, scenarios, inputs: m, isModified, onJumpToA
         <div className="aspect-[21/9] w-full">
           <img
             src={`${import.meta.env.BASE_URL}img/hero.jpg`}
-            alt="Proposed luxury overwater resort, Vaitape, Bora Bora — golden hour aerial concept"
+            alt="Proposed Vaitape Town Hotel, Bora Bora — golden hour aerial concept"
             loading="lazy"
             decoding="async"
             className="h-full w-full object-cover"
@@ -100,7 +100,7 @@ export function TabVerdict({ active, scenarios, inputs: m, isModified, onJumpToA
             Vaitape, Bora Bora &middot; Concept Render
           </span>
           <h1 className="font-display text-[22px] font-medium leading-tight tracking-tight text-white sm:text-[28px] lg:text-[32px]">
-            Luxury Overwater Resort &mdash; Investment Verdict
+            Vaitape Town Hotel &mdash; Feasibility Model
           </h1>
         </figcaption>
       </figure>
